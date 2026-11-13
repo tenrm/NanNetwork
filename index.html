@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nan Network · เครือข่ายศูนย์เรียนรู้น่าน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script>window.NAN_FIREBASE_CONFIG = window.NAN_FIREBASE_CONFIG || null;</script>
+<script src="config.js" onerror="void 0"></script>
+<style>
+:root{
+  --issue:#FED7AA; --issue-s:#E07B2A; --issue-bg:#FFF4E8;
+  --org:#FDE68A;   --org-s:#C99A06;   --org-bg:#FFFBEA;
+  --person:#BBF7D0;--person-s:#1F9D55;--person-bg:#F1FBF4;
+  --ink:#2d2a26; --muted:#7a7268; --line:#e7e1d8; --panel:#fffdf9; --bg:#f7f4ef;
+  --accent:#b45309; --link:#7c6f5d; --danger:#b42318;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:"IBM Plex Sans Thai",system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:14px}
+button,input,select,textarea{font:inherit;color:inherit}
+header{display:flex;align-items:center;gap:12px;padding:10px 16px;background:#fff;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;line-height:1.15;margin-right:8px}
+.brand b{font-size:17px}
+.brand span{font-size:12px;color:var(--muted)}
+.proj{display:flex;align-items:center;gap:6px}
+.proj select{min-width:220px;max-width:340px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.spacer{flex:1}
+.pill{font-size:12px;padding:4px 10px;border-radius:999px;background:#eef2f0;color:#3c5a49;white-space:nowrap}
+.pill.warn{background:#fff3df;color:#8a5300}
+.pill.off{background:#f1efec;color:#6b645b}
+.pill.err{background:#fde8e6;color:var(--danger)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:#cfc6b8;background:#fffaf2}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:#9a4708}
+.btn.danger{color:var(--danger)}
+.btn.danger.armed{background:var(--danger);color:#fff;border-color:var(--danger)}
+.btn.sm{padding:3px 8px;font-size:12px}
+.btn.on{background:#3d3a35;color:#fff;border-color:#3d3a35}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+main{display:grid;grid-template-columns:270px 1fr 340px;height:calc(100vh - 58px);min-height:520px}
+aside{background:var(--panel);overflow:auto;padding:14px}
+aside.left{border-right:1px solid var(--line)}
+aside.right{border-left:1px solid var(--line);padding:0;display:flex;flex-direction:column}
+.sec{margin-bottom:18px}
+.sec h3{font-size:13px;margin:0 0 8px;color:var(--muted);font-weight:600;letter-spacing:.02em}
+.types{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:6px}
+.types button{border:2px solid transparent;border-radius:8px;padding:6px 2px;cursor:pointer;font-size:13px}
+.types button[data-type=issue]{background:var(--issue)}
+.types button[data-type=org]{background:var(--org)}
+.types button[data-type=person]{background:var(--person)}
+.types button.sel{border-color:var(--ink)}
+input[type=text],input[type=search],textarea,select{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:#fff}
+textarea{resize:vertical}
+input[type=range]{accent-color:var(--accent)}
+label{display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
+label>input,label>textarea,label>select{margin-top:3px;color:var(--ink);font-size:14px}
+.row{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.hint{font-size:12px;color:var(--muted);margin:6px 0 0}
+.legend div{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:13px}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;flex:none;border:1.5px solid}
+.dot.issue{background:var(--issue);border-color:var(--issue-s)}
+.dot.org{background:var(--org);border-color:var(--org-s)}
+.dot.person{background:var(--person);border-color:var(--person-s)}
+.legend #wlegend{display:block}
+.wl{display:flex;white-space:nowrap;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin:3px 0}
+.wl i{display:inline-block;width:44px;background:var(--link);border-radius:4px}
+.stage{position:relative;overflow:hidden;background:#fff}
+#net{width:100%;height:100%;display:block;cursor:grab;user-select:none}
+#net.connect{cursor:crosshair}
+.ovl{position:absolute;pointer-events:none}
+.key{top:10px;left:12px;background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:12px;display:flex;gap:12px}
+.key span{display:flex;align-items:center;gap:5px}
+.zoom{position:absolute;right:12px;top:10px;display:flex;flex-direction:column;gap:4px}
+.zoom button{width:32px;height:32px;padding:0;font-size:16px}
+.banner{position:absolute;left:50%;transform:translateX(-50%);top:10px;background:#3d3a35;color:#fff;font-size:13px;padding:6px 12px;border-radius:999px;display:none;pointer-events:auto}
+.banner button{margin-left:8px;background:transparent;border:1px solid #fff8;color:#fff;border-radius:999px;padding:1px 8px;cursor:pointer}
+.empty{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;pointer-events:none}
+.empty>div{background:rgba(255,255,255,.94);border:1px dashed #cfc6b8;border-radius:14px;padding:18px 22px;max-width:360px;pointer-events:auto}
+#tip{position:absolute;pointer-events:none;background:#2d2a26;color:#fff;font-size:12px;padding:7px 9px;border-radius:8px;max-width:260px;display:none;line-height:1.45;z-index:5}
+#tip b{font-size:13px}
+.tabs{display:flex;border-bottom:1px solid var(--line);background:#fff;position:sticky;top:0;z-index:2}
+.tabs button{flex:1;border:0;background:none;padding:10px 4px;cursor:pointer;font-size:13px;color:var(--muted);border-bottom:2px solid transparent}
+.tabs button.sel{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.tab{padding:14px;display:none;overflow:auto;flex:1}
+.tab.sel{display:block}
+.muted{color:var(--muted)}
+.det-head{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.det-title{font-size:18px;font-weight:600;margin:4px 0 2px;word-break:break-word}
+h4{font-size:13px;margin:16px 0 6px}
+ul.conn{list-style:none;margin:0;padding:0}
+ul.conn li{display:grid;grid-template-columns:14px 1fr 70px 16px 20px;gap:6px;align-items:center;padding:5px 0;border-bottom:1px solid #f0ebe3;font-size:13px}
+ul.conn li a{color:var(--ink);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ul.conn li a:hover{text-decoration:underline}
+ul.conn input[type=range]{width:70px}
+.x{border:0;background:none;color:#a59c90;cursor:pointer;font-size:16px;padding:0}
+.x:hover{color:var(--danger)}
+.addlink{display:grid;grid-template-columns:1fr 56px auto;gap:6px;margin-top:8px}
+.role-card{border:1px solid var(--line);border-left:5px solid var(--org-s);background:#fff;border-radius:10px;padding:9px 11px;margin-bottom:9px;cursor:pointer}
+.role-card:hover{background:#fffdf3}
+.role-card.sel{box-shadow:0 0 0 2px var(--org-s) inset}
+.rc-h{display:flex;align-items:center;gap:6px}
+.rc-h b{flex:1;font-size:14px}
+.rc-h small{color:var(--muted)}
+.rc-role{font-size:13px;margin:5px 0;white-space:pre-wrap;line-height:1.5}
+.rc-role i{color:#b0a698}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.chip{font-size:11.5px;padding:1px 7px;border-radius:999px;border:1px solid}
+.chip.issue{background:var(--issue-bg);border-color:var(--issue)}
+.chip.person{background:var(--person-bg);border-color:var(--person)}
+.chip.org{background:var(--org-bg);border-color:var(--org)}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px}
+.kpi b{display:block;font-size:20px}
+.kpi span{font-size:11.5px;color:var(--muted)}
+.bars .b{display:grid;grid-template-columns:1fr 90px 34px;gap:6px;align-items:center;font-size:12.5px;padding:3px 0;cursor:pointer}
+.bars .b:hover{background:#faf6ef}
+.bars .b span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.bars .track{height:8px;background:#f1ece4;border-radius:4px;overflow:hidden}
+.bars .fill{height:100%;background:var(--accent);opacity:.75}
+.bars .v{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+table.cov{width:100%;border-collapse:collapse;font-size:12.5px}
+table.cov th,table.cov td{padding:4px 3px;border-bottom:1px solid #f0ebe3;text-align:right}
+table.cov th:first-child,table.cov td:first-child{text-align:left}
+table.cov tr.low td{color:var(--danger)}
+.modal{position:fixed;inset:0;background:rgba(30,25,20,.35);display:none;align-items:center;justify-content:center;z-index:20;padding:16px}
+.modal>div{background:#fff;border-radius:14px;padding:18px;width:min(520px,100%);max-height:90vh;overflow:auto}
+.modal h3{margin:0 0 6px}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#2d2a26;color:#fff;padding:8px 14px;border-radius:999px;font-size:13px;display:none;z-index:30}
+svg text{font-family:"IBM Plex Sans Thai",system-ui,sans-serif}
+.halo{paint-order:stroke;stroke:#fff;stroke-width:3.5px;stroke-linejoin:round}
+.node{cursor:pointer}
+.link{fill:none;stroke:var(--link);stroke-linecap:round;transition:opacity .15s}
+.linkhit{fill:none;stroke:transparent;stroke-width:14;cursor:pointer}
+footer{display:none}
+@media (max-width:980px){
+  main{grid-template-columns:1fr;height:auto}
+  .stage{height:72vh;order:-1}
+  aside.left,aside.right{border:0;border-top:1px solid var(--line)}
+  aside.right{min-height:420px}
+  .proj select{min-width:160px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><b>Nan Network</b><span>แผนภาพเครือข่ายศูนย์เรียนรู้น่าน</span></div>
+  <div class="proj">
+    <select id="projSel" aria-label="เลือกโปรเจค"></select>
+    <button class="btn sm" id="projNew" title="สร้างโปรเจคใหม่">+ โปรเจค</button>
+    <button class="btn sm" id="projEdit" title="แก้ไขโปรเจค">แก้ไข</button>
+  </div>
+  <div class="spacer"></div>
+  <span class="pill off" id="status">กำลังโหลด…</span>
+  <button class="btn sm" id="authBtn" style="display:none"></button>
+</header>
+
+<main>
+  <aside class="left">
+    <div class="sec edit-only">
+      <h3>เพิ่มรายการ</h3>
+      <div class="types" id="addTypes">
+        <button data-type="issue" class="sel">ประเด็น</button>
+        <button data-type="org">หน่วยงาน</button>
+        <button data-type="person">บุคคล</button>
+      </div>
+      <input type="text" id="addName" placeholder="ชื่อประเด็น" maxlength="80">
+      <div class="row"><button class="btn primary" id="addBtn">+ เพิ่ม</button></div>
+    </div>
+
+    <div class="sec">
+      <h3>เครื่องมือ</h3>
+      <div class="row" style="margin-top:0">
+        <button class="btn on" id="toolSelect">เลือก / ย้าย</button>
+        <button class="btn edit-only" id="toolConnect">วาดเส้น</button>
+      </div>
+      <p class="hint" id="toolHint">คลิกโหนดเพื่อดูรายละเอียด · ลากโหนดเพื่อเลื่อนตำแหน่งบนวง · เลื่อนลูกกลิ้ง/ถ่างนิ้วเพื่อซูม</p>
+    </div>
+
+    <div class="sec">
+      <h3>ค้นหา / กรอง</h3>
+      <input type="search" id="search" placeholder="ค้นหาชื่อ…">
+      <label>แสดงเส้นที่ความสำคัญ ≥ <b id="minWv">1</b></label>
+      <input type="range" id="minW" min="1" max="5" value="1" style="width:100%">
+      <label>ขนาดโหนดตาม</label>
+      <select id="sizeBy">
+        <option value="degree">ผลรวมความสำคัญของเส้น (strength)</option>
+        <option value="btw">ความเป็นตัวเชื่อม (betweenness)</option>
+        <option value="none">เท่ากันทั้งหมด</option>
+      </select>
+      <div class="row edit-only"><button class="btn sm" id="autoLayout">จัดเรียงอัตโนมัติ</button></div>
+    </div>
+
+    <div class="sec legend">
+      <h3>คำอธิบาย</h3>
+      <div><span class="dot issue"></span>วงใน · ประเด็น</div>
+      <div><span class="dot org"></span>วงกลาง · หน่วยงาน (มีบทบาท)</div>
+      <div><span class="dot person"></span>วงนอก · บุคคล</div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted)">ความหนาเส้น = ระดับความสำคัญ</div>
+      <div id="wlegend"></div>
+    </div>
+
+    <div class="sec">
+      <h3>ข้อมูล</h3>
+      <div class="row" style="margin-top:0">
+        <button class="btn sm" id="expJson">ส่งออก JSON</button>
+        <button class="btn sm edit-only" id="impJson">นำเข้า JSON</button>
+        <button class="btn sm" id="expPng">บันทึกภาพ PNG</button>
+      </div>
+      <input type="file" id="impFile" accept=".json,application/json" style="display:none">
+    </div>
+  </aside>
+
+  <section class="stage" id="stage">
+    <svg id="net" viewBox="-600 -600 1200 1200" preserveAspectRatio="xMidYMid meet" role="img" aria-label="แผนภาพเครือข่าย 3 วง"></svg>
+    <div class="ovl key"><span><i class="dot issue"></i>ประเด็น</span><span><i class="dot org"></i>หน่วยงาน</span><span><i class="dot person"></i>บุคคล</span></div>
+    <div class="zoom"><button class="btn" id="zIn" title="ซูมเข้า">+</button><button class="btn" id="zOut" title="ซูมออก">−</button><button class="btn" id="zFit" title="พอดีจอ">⟲</button></div>
+    <div class="banner" id="banner"></div>
+    <div class="empty" id="empty"><div id="emptyBox"></div></div>
+    <div id="tip"></div>
+  </section>
+
+  <aside class="right">
+    <div class="tabs">
+      <button data-tab="roles" class="sel">บทบาทหน่วยงาน</button>
+      <button data-tab="detail">รายละเอียด</button>
+      <button data-tab="analysis">วิเคราะห์เครือข่าย</button>
+    </div>
+    <div class="tab sel" id="tab-roles"></div>
+    <div class="tab" id="tab-detail"></div>
+    <div class="tab" id="tab-analysis"></div>
+  </aside>
+</main>
+
+<div class="modal" id="modal"><div id="modalBox"></div></div>
+<div id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- constants ---------- */
+const TYPES = {
+  issue:{label:'ประเด็น', ring:0, fill:'#FED7AA', stroke:'#E07B2A', base:30},
+  org:{label:'หน่วยงาน', ring:1, fill:'#FDE68A', stroke:'#C99A06', base:14},
+  person:{label:'บุคคล', ring:2, fill:'#BBF7D0', stroke:'#1F9D55', base:9}
+};
+const ORDER = ['issue','org','person'];
+const RING_R = [150, 300, 440];
+const WW = {1:1.2, 2:2.6, 3:4.2, 4:6.2, 5:8.6};
+const WL = {1:'น้อย', 2:'ค่อนข้างน้อย', 3:'ปานกลาง', 4:'สำคัญ', 5:'สำคัญมาก'};
+const PLACEHOLDER = {issue:'ชื่อประเด็น เช่น ความมั่นคงทางอาหาร', org:'ชื่อหน่วยงาน', person:'ชื่อบุคคล'};
+
+/* ---------- state ---------- */
+const S = {mode:'local', canWrite:true, projects:[], pid:null, nodes:[], links:[], sel:null,
+  tool:'select', connectFrom:null, hover:null, minW:1, sizeBy:'degree', search:'', tmpA:{},
+  addType:'issue', loaded:false, user:null, panelDirty:false};
+let STORE = null, M = {adj:{},deg:{},str:{},bc:{}}, POS = {};
+let unsubN = null, unsubL = null;
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const newId = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const nodeById = id => S.nodes.find(n => n.id === id);
+const linkById = id => S.links.find(l => l.id === id);
+const W = l => Math.max(1, Math.min(5, +l.w || 3));
+
+function toast(msg, ms){ const t=$('#toast'); t.textContent=msg; t.style.display='block'; clearTimeout(toast._t); toast._t=setTimeout(()=>t.style.display='none', ms||2600); }
+
+/* ---------- storage adapters ---------- */
+// Doc-store adapter: Claude artifact db and Firebase Firestore (compat) share this API shape.
+function docStore(db){
+  return {
+    subCol(path, cb, err){
+      return db.collection(path).onSnapshot(
+        snap => cb(snap.docs.map(d => Object.assign({}, d.data(), {id:d.id}))),
+        e => err && err(e));
+    },
+    set(path, data){ return db.doc(path).set(JSON.parse(JSON.stringify(data))); },
+    del(path){ return db.doc(path).delete(); }
+  };
+}
+// Local (browser) adapter with the same API.
+function localStore(){
+  const KEY = 'nannetwork-v1';
+  let docs = {};
+  try { docs = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch(e){ docs = {}; }
+  const subs = new Set();
+  const parent = p => p.split('/').slice(0,-1).join('/');
+  const list = col => Object.keys(docs).filter(k => parent(k) === col).map(k => Object.assign({}, docs[k], {id:k.split('/').pop()}));
+  const emit = col => subs.forEach(s => { if (s.path === col) s.cb(list(col)); });
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(docs)); } catch(e){} };
+  window.addEventListener('storage', e => {
+    if (e.key !== KEY) return;
+    try { docs = JSON.parse(e.newValue || '{}') || {}; } catch(_){ return; }
+    subs.forEach(s => s.cb(list(s.path)));
+  });
+  return {
+    isEmpty: () => Object.keys(docs).length === 0,
+    subCol(path, cb){ const s = {path, cb}; subs.add(s); setTimeout(() => cb(list(path)), 0); return () => subs.delete(s); },
+    async set(path, data){ docs[path] = JSON.parse(JSON.stringify(data)); save(); emit(parent(path)); },
+    async del(path){ delete docs[path]; save(); emit(parent(path)); }
+  };
+}
+
+// one write at a time
+let wq = Promise.resolve();
+function write(fn){
+  if (!S.canWrite){ toast('โหมดดูอย่างเดียว — ไม่มีสิทธิ์แก้ไข'); return Promise.resolve(); }
+  wq = wq.then(fn).catch(onWriteErr);
+  return wq;
+}
+function onWriteErr(e){
+  console.warn(e);
+  const code = e && (e.code || '');
+  if (S.mode === 'claude' && code === 'invalid_argument'){ S.canWrite = false; applyPerms(); toast('บัญชีนี้ดูได้อย่างเดียว ไม่สามารถแก้ไขข้อมูล'); return; }
+  if (code === 'permission-denied'){ toast('ไม่มีสิทธิ์แก้ไข — ลงชื่อเข้าใช้ด้วยบัญชีที่ได้รับสิทธิ์'); return; }
+  if (code === 'quota_exceeded'){ toast('พื้นที่ข้อมูลเต็ม — ลบรายการที่ไม่ใช้ก่อน'); return; }
+  toast('บันทึกไม่สำเร็จ ลองอีกครั้ง');
+}
+const pPath = pid => 'projects/' + pid;
+const nPath = (pid,id) => 'projects/' + pid + '/nodes/' + id;
+const lPath = (pid,id) => 'projects/' + pid + '/links/' + id;
+const nodeBody = n => ({name:String(n.name||'').slice(0,120), type:n.type, role:n.role||'', note:n.note||'', a:(typeof n.a==='number' && isFinite(n.a)) ? n.a : null, created:n.created||Date.now()});
+const linkBody = l => ({s:l.s, t:l.t, w:W(l), label:l.label||'', created:l.created||Date.now()});
+const saveNode = n => write(() => STORE.set(nPath(S.pid, n.id), nodeBody(n)));
+const saveLink = l => write(() => STORE.set(lPath(S.pid, l.id), linkBody(l)));
+
+/* ---------- init ---------- */
+async function init(){
+  bindUI(); setupSvg();
+  if (window.claude && typeof window.claude.use === 'function'){
+    S.mode = 'claude'; setStatus('กำลังเชื่อมต่อ…', 'off');
+    let db = null;
+    try { db = await window.claude.use('db'); } catch(e){ db = null; }
+    if (!db){ setStatus('ต้องลงชื่อเข้าใช้เพื่อดูข้อมูล', 'err'); showEmpty('<b>ยังโหลดข้อมูลไม่ได้</b><p class="muted">ลงชื่อเข้าใช้ claude.ai เพื่อดูเครือข่ายนี้</p>'); return; }
+    STORE = docStore(db);
+    try {
+      const u = await window.claude.use('user');
+      if (u && typeof u.can === 'function'){ const c = await u.can('data.write'); if (c === false) S.canWrite = false; }
+    } catch(e){}
+  } else if (window.NAN_FIREBASE_CONFIG && window.NAN_FIREBASE_CONFIG.apiKey){
+    S.mode = 'firebase'; S.canWrite = false; setStatus('กำลังเชื่อมต่อ…', 'off');
+    try { STORE = await initFirebase(); }
+    catch(e){ console.error(e); S.mode='local'; S.canWrite = true; STORE = localStore(); toast('เชื่อมต่อ Firebase ไม่ได้ ใช้โหมดในเครื่องแทน'); }
+  } else {
+    S.mode = 'local'; STORE = localStore();
+    if (STORE.isEmpty()) await importFromUrl('data.json', true);
+  }
+  applyPerms();
+  subscribeProjects();
+}
+
+async function initFirebase(){
+  const V = '10.12.2', base = 'https://www.gstatic.com/firebasejs/' + V + '/';
+  const load = src => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+  await load(base + 'firebase-app-compat.js');
+  await Promise.all([load(base + 'firebase-firestore-compat.js'), load(base + 'firebase-auth-compat.js')]);
+  firebase.initializeApp(window.NAN_FIREBASE_CONFIG);
+  const fs = firebase.firestore(), auth = firebase.auth();
+  const btn = $('#authBtn'); btn.style.display = '';
+  btn.onclick = () => {
+    if (S.user) auth.signOut();
+    else auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e => toast('ลงชื่อเข้าใช้ไม่สำเร็จ: ' + (e.code||'')));
+  };
+  auth.onAuthStateChanged(async u => {
+    S.user = u; S.canWrite = false;
+    if (u){
+      try {
+        const d = await fs.doc('config/editors').get();
+        const emails = ((d.exists && d.data().emails) || []).map(x => String(x).toLowerCase());
+        S.canWrite = emails.includes(String(u.email||'').toLowerCase());
+        if (!S.canWrite) toast('บัญชี ' + u.email + ' ยังไม่มีสิทธิ์แก้ไข (ดูได้อย่างเดียว)', 4000);
+      } catch(e){ S.canWrite = false; }
+    }
+    btn.textContent = u ? ('ออกจากระบบ (' + (u.displayName || u.email) + ')') : 'ลงชื่อเข้าใช้เพื่อแก้ไข';
+    applyPerms(); renderAll();
+  });
+  return docStore(fs);
+}
+
+function setStatus(txt, cls){ const s = $('#status'); s.textContent = txt; s.className = 'pill ' + (cls||''); }
+function applyPerms(){
+  document.querySelectorAll('.edit-only').forEach(el => el.style.display = S.canWrite ? '' : 'none');
+  $('#projNew').style.display = S.canWrite ? '' : 'none';
+  $('#projEdit').style.display = S.canWrite ? '' : 'none';
+  if (!S.canWrite && S.tool === 'connect') setTool('select');
+  const m = {claude:'ซิงก์เรียลไทม์ (Claude)', firebase:'ซิงก์เรียลไทม์ (Firebase)', local:'โหมดในเครื่อง (เบราว์เซอร์นี้)'}[S.mode];
+  setStatus(m + (S.canWrite ? '' : ' · ดูอย่างเดียว'), S.mode === 'local' ? 'warn' : (S.canWrite ? '' : 'off'));
+  $('#status').title = S.mode === 'local' ? 'ข้อมูลเก็บในเบราว์เซอร์นี้เท่านั้น — ตั้งค่า Firebase ใน config.js เพื่อให้ทุกคนแก้ไขร่วมกันแบบเรียลไทม์' : '';
+  $('#expPng').style.display = S.mode === 'claude' ? 'none' : '';
+}
+
+/* ---------- subscriptions ---------- */
+let loadTimer = null;
+function subscribeProjects(){
+  loadTimer = setTimeout(() => { if (!S.loaded) setStatus('ยังเชื่อมต่อข้อมูลไม่ได้ — ข้อมูลอาจไม่เป็นปัจจุบัน', 'err'); }, 10000);
+  STORE.subCol('projects', list => {
+    S.loaded = true; clearTimeout(loadTimer); applyPerms();
+    S.projects = list.sort((a,b) => (a.created||0) - (b.created||0));
+    let want = S.pid;
+    const h = location.hash.replace(/^#p-/, '');
+    if (h && S.projects.some(p => p.id === h)) want = h;
+    if (!S.projects.some(p => p.id === want)) want = S.projects.length ? S.projects[0].id : null;
+    renderProjSel(want);
+    if (want !== S.pid) openProject(want);
+    else renderAll();
+  }, e => { setStatus('โหลดข้อมูลไม่สำเร็จ', 'err'); console.warn(e); });
+}
+function openProject(pid){
+  if (unsubN) unsubN(); if (unsubL) unsubL();
+  S.pid = pid; S.nodes = []; S.links = []; S.sel = null; S.connectFrom = null; S.tmpA = {};
+  zoomFit(true);
+  if (pid){
+    try { if (location.hash !== '#p-' + pid) history.replaceState(null, '', '#p-' + pid); } catch(e){}
+    unsubN = STORE.subCol('projects/' + pid + '/nodes', l => { S.nodes = l.filter(n => TYPES[n.type]); renderAll(); });
+    unsubL = STORE.subCol('projects/' + pid + '/links', l => { S.links = l; renderAll(); });
+  }
+  renderAll();
+}
+function renderProjSel(want){
+  const sel = $('#projSel');
+  sel.innerHTML = S.projects.length ? S.projects.map(p => '<option value="' + esc(p.id) + '"' + (p.id === want ? ' selected' : '') + '>' + esc(p.name || '(ไม่มีชื่อ)') + '</option>').join('') : '<option>— ยังไม่มีโปรเจค —</option>';
+  $('#projEdit').disabled = !S.projects.length;
+}
+
+/* ---------- metrics ---------- */
+function computeMetrics(){
+  const ids = new Set(S.nodes.map(n => n.id));
+  const adj = {}, deg = {}, str = {};
+  S.nodes.forEach(n => { adj[n.id] = []; deg[n.id] = 0; str[n.id] = 0; });
+  S.links.forEach(l => {
+    if (!ids.has(l.s) || !ids.has(l.t) || l.s === l.t) return;
+    adj[l.s].push(l.t); adj[l.t].push(l.s);
+    deg[l.s]++; deg[l.t]++; str[l.s] += W(l); str[l.t] += W(l);
+  });
+  const V = Object.keys(adj), bc = {}; V.forEach(v => bc[v] = 0);
+  for (const s of V){
+    const st = [], P = {}, sg = {}, d = {};
+    V.forEach(v => { P[v] = []; sg[v] = 0; d[v] = -1; });
+    sg[s] = 1; d[s] = 0; const Q = [s]; let qi = 0;
+    while (qi < Q.length){ const v = Q[qi++]; st.push(v);
+      for (const w of adj[v]){ if (d[w] < 0){ d[w] = d[v] + 1; Q.push(w); } if (d[w] === d[v] + 1){ sg[w] += sg[v]; P[w].push(v); } } }
+    const dl = {}; V.forEach(v => dl[v] = 0);
+    while (st.length){ const w = st.pop(); for (const v of P[w]) dl[v] += sg[v] / sg[w] * (1 + dl[w]); if (w !== s) bc[w] += dl[w]; }
+  }
+  const n = V.length, norm = n > 2 ? (n-1)*(n-2) : 1;
+  V.forEach(v => bc[v] /= norm);
+  M = {adj, deg, str, bc};
+}
+
+/* ---------- layout ---------- */
+const TAU = Math.PI * 2;
+function angleOf(n){ const t = S.tmpA[n.id]; if (typeof t === 'number') return t; return (typeof n.a === 'number' && isFinite(n.a)) ? n.a : null; }
+function circMean(arr){ // [{a,w}]
+  let x = 0, y = 0; arr.forEach(o => { x += Math.cos(o.a) * o.w; y += Math.sin(o.a) * o.w; });
+  return (x === 0 && y === 0) ? null : Math.atan2(y, x);
+}
+function computeLayout(){
+  POS = {};
+  const by = {issue:[], org:[], person:[]};
+  S.nodes.forEach(n => by[n.type].push(n));
+  ORDER.forEach(t => by[t].sort((a,b) => (a.created||0) - (b.created||0) || String(a.id).localeCompare(String(b.id))));
+  const wts = {}; // neighbour weights
+  S.links.forEach(l => { (wts[l.s] = wts[l.s] || []).push({o:l.t, w:W(l)}); (wts[l.t] = wts[l.t] || []).push({o:l.s, w:W(l)}); });
+  ORDER.forEach((t, ri) => {
+    const list = by[t], N = list.length; if (!N) return;
+    const r = RING_R[ri], step = TAU / N;
+    const free = [];
+    list.forEach(n => { const a = angleOf(n); if (a !== null) POS[n.id] = {a, r}; else free.push(n); });
+    // target angle from already-placed inner neighbours
+    free.forEach(n => {
+      const nb = (wts[n.id] || []).filter(o => POS[o.o] && POS[o.o].r < r).map(o => ({a:POS[o.o].a, w:o.w}));
+      n._t = nb.length ? circMean(nb) : null;
+    });
+    const withT = free.filter(n => n._t !== null).sort((a,b) => norm(a._t) - norm(b._t));
+    const noT = free.filter(n => n._t === null);
+    const ordered = withT.concat(noT);
+    let off = -Math.PI/2;
+    if (withT.length){
+      const m = circMean(withT.map((n,k) => ({a:n._t - k*step, w:1}))); if (m !== null) off = m;
+    }
+    ordered.forEach((n,k) => { POS[n.id] = {a: off + k*step, r}; delete n._t; });
+  });
+  Object.values(POS).forEach(p => { p.x = Math.cos(p.a) * p.r; p.y = Math.sin(p.a) * p.r; });
+}
+function norm(a){ a = a % TAU; return a < 0 ? a + TAU : a; }
+function nodeR(n){
+  const b = TYPES[n.type].base;
+  if (S.sizeBy === 'none') return b;
+  const src = S.sizeBy === 'btw' ? M.bc : M.str;
+  const vals = S.nodes.filter(x => x.type === n.type).map(x => src[x.id] || 0);
+  const mx = Math.max(0.0001, ...vals);
+  return b * (0.75 + 0.7 * Math.sqrt((src[n.id] || 0) / mx));
+}
+
+/* ---------- SVG ---------- */
+let svg, gZoom, gBand, gLinks, gHits, gNodes, gCenter, tempLine, zoom;
+function setupSvg(){
+  svg = d3.select('#net');
+  gZoom = svg.append('g');
+  gBand = gZoom.append('g');
+  const bands = [[530,'#F1FBF4'],[372,'#FFFBEA'],[225,'#FFF4E8'],[85,'#ffffff']];
+  bands.forEach(([r,c]) => gBand.append('circle').attr('r', r).attr('fill', c));
+  RING_R.forEach((r,i) => gBand.append('circle').attr('r', r).attr('fill','none').attr('stroke', [TYPES.issue.stroke, TYPES.org.stroke, TYPES.person.stroke][i]).attr('stroke-opacity', .28).attr('stroke-dasharray','4 6'));
+  gCenter = gZoom.append('g').attr('class','center');
+  gLinks = gZoom.append('g'); gHits = gZoom.append('g');
+  tempLine = gZoom.append('line').attr('stroke','#3d3a35').attr('stroke-width',2).attr('stroke-dasharray','6 5').style('display','none').style('pointer-events','none');
+  gNodes = gZoom.append('g');
+  zoom = d3.zoom().scaleExtent([0.4, 5]).on('zoom', e => gZoom.attr('transform', e.transform));
+  svg.call(zoom).on('dblclick.zoom', null);
+  svg.on('click', e => { if (e.target === svg.node() || e.target.closest('g') === gBand.node() || e.target.closest('.center')){ if (S.connectFrom){ S.connectFrom = null; tempLine.style('display','none'); updateBanner(); } select(null); } });
+  svg.on('mousemove', e => {
+    if (!S.connectFrom || !POS[S.connectFrom]) return;
+    const [x,y] = d3.pointer(e, gZoom.node()), p = POS[S.connectFrom];
+    tempLine.style('display', null).attr('x1', p.x).attr('y1', p.y).attr('x2', x).attr('y2', y);
+  });
+}
+function zoomBy(k){ svg.transition().duration(250).call(zoom.scaleBy, k); }
+function zoomFit(instant){ if (!svg) return; (instant ? svg : svg.transition().duration(300)).call(zoom.transform, d3.zoomIdentity); }
+
+function linkPath(l){
+  const a = POS[l.s], b = POS[l.t]; if (!a || !b) return '';
+  const k = a.r === b.r ? 0.62 : 0.93;
+  const cx = (a.x + b.x) / 2 * k, cy = (a.y + b.y) / 2 * k;
+  return 'M' + a.x + ',' + a.y + 'Q' + cx + ',' + cy + ' ' + b.x + ',' + b.y;
+}
+
+const seg = (typeof Intl !== 'undefined' && Intl.Segmenter) ? new Intl.Segmenter('th', {granularity:'word'}) : null;
+function wrap(s, max){
+  s = String(s || ''); if (s.length <= max) return [s];
+  const parts = seg ? Array.from(seg.segment(s), x => x.segment) : s.split(/(\s+)/);
+  const lines = [''];
+  for (const w of parts){ const cur = lines[lines.length-1]; if ((cur + w).length > max && cur.trim()) lines.push(w.replace(/^\s+/, '')); else lines[lines.length-1] = cur + w; }
+  if (lines.length > 3){ lines.length = 3; lines[2] += '…'; }
+  return lines;
+}
+
+const drag = d3.drag()
+  .filter(e => S.canWrite && S.tool === 'select' && !e.button)
+  .on('start', (e,d) => { d._mv = false; })
+  .on('drag', (e,d) => {
+    const [x,y] = d3.pointer(e, gZoom.node());
+    S.tmpA[d.id] = Math.atan2(y, x); d._mv = true; hideTip(); renderGraph();
+  })
+  .on('end', (e,d) => {
+    if (!d._mv) return;
+    const a = S.tmpA[d.id], n = nodeById(d.id);
+    if (n) saveNode(Object.assign({}, n, {a})).then(() => { delete S.tmpA[d.id]; });
+  });
+
+function renderGraph(){
+  computeLayout();
+  const ids = new Set(S.nodes.map(n => n.id));
+  const vis = S.links.filter(l => ids.has(l.s) && ids.has(l.t) && l.s !== l.t && W(l) >= S.minW);
+  // center label
+  const pj = S.projects.find(p => p.id === S.pid);
+  const cl = wrap(pj ? pj.name : '', 11);
+  gCenter.selectAll('text').data(cl).join('text').attr('text-anchor','middle').attr('y', (d,i) => (i - (cl.length-1)/2) * 20 + 6)
+    .attr('font-size', 17).attr('font-weight', 600).attr('fill', '#9a7b55').text(d => d);
+
+  gLinks.selectAll('path.link').data(vis, d => d.id).join('path').attr('class','link')
+    .attr('d', linkPath).attr('stroke-width', d => WW[W(d)]);
+  gHits.selectAll('path.linkhit').data(vis, d => d.id).join('path').attr('class','linkhit')
+    .attr('d', linkPath)
+    .on('click', (e,d) => { e.stopPropagation(); select({kind:'link', id:d.id}); })
+    .on('mouseenter', (e,d) => showTip(e, linkTip(d))).on('mousemove', moveTip).on('mouseleave', hideTip);
+
+  const ns = gNodes.selectAll('g.node').data(S.nodes, d => d.id).join(enter => {
+    const g = enter.append('g').attr('class','node');
+    g.append('circle').attr('class','ring-sel');
+    g.append('circle').attr('class','body');
+    g.append('text').attr('class','lbl halo');
+    g.call(drag);
+    g.on('click', (e,d) => { e.stopPropagation(); onNodeClick(d); })
+     .on('mouseenter', (e,d) => { S.hover = d.id; applyHighlight(); showTip(e, nodeTip(d)); })
+     .on('mousemove', moveTip)
+     .on('mouseleave', () => { S.hover = null; applyHighlight(); hideTip(); });
+    return g;
+  });
+  ns.attr('transform', d => { const p = POS[d.id]; return p ? 'translate(' + p.x + ',' + p.y + ')' : ''; });
+  ns.select('circle.body').attr('r', d => nodeR(d)).attr('fill', d => TYPES[d.type].fill).attr('stroke', d => TYPES[d.type].stroke).attr('stroke-width', 1.6);
+  ns.select('circle.ring-sel').attr('r', d => nodeR(d) + 5).attr('fill','none').attr('stroke', '#3d3a35').attr('stroke-width', 2.2).attr('stroke-dasharray', d => S.connectFrom === d.id ? '4 3' : null);
+  ns.each(function(d){
+    const p = POS[d.id]; if (!p) return;
+    const t = d3.select(this).select('text.lbl'), r = nodeR(d);
+    const deg = p.a * 180 / Math.PI, c = Math.cos(p.a), s = Math.sin(p.a);
+    t.selectAll('tspan').remove(); t.attr('transform', null).attr('x', null).attr('y', null);
+    if (d.type === 'issue'){
+      const ls = wrap(d.name, 10);
+      t.attr('text-anchor','middle').attr('font-size', 16).attr('font-weight', 600).attr('fill', '#6b3410');
+      ls.forEach((ln,i) => t.append('tspan').attr('x', 0).attr('y', (i - (ls.length-1)/2) * 18 + 5.5).text(ln));
+    } else if (d.type === 'org'){
+      const ls = wrap(d.name, 16);
+      const anchor = c > 0.25 ? 'start' : (c < -0.25 ? 'end' : 'middle');
+      const dx = c * (r + 6), dy = s * (r + 6) + (Math.abs(c) <= 0.25 ? (s > 0 ? 14 : -6 - (ls.length-1)*17) : 5 - (ls.length-1)*8.5);
+      t.attr('text-anchor', anchor).attr('font-size', 15).attr('font-weight', 500).attr('fill', '#5a4500');
+      ls.forEach((ln,i) => t.append('tspan').attr('x', dx).attr('y', dy + i*17).text(ln));
+    } else {
+      const left = c < 0;
+      t.attr('font-size', 14.5).attr('fill', '#14532d').attr('text-anchor', left ? 'end' : 'start')
+       .attr('transform', 'rotate(' + deg + ') translate(' + (r + 6) + ',0)' + (left ? ' rotate(180)' : ''))
+       .append('tspan').attr('x', 0).attr('y', 5).text(d.name.length > 24 ? d.name.slice(0,23) + '…' : d.name);
+    }
+  });
+  if (S.connectFrom && POS[S.connectFrom]){ const p = POS[S.connectFrom]; tempLine.attr('x1', p.x).attr('y1', p.y); }
+  applyHighlight();
+}
+
+function applyHighlight(){
+  const focus = S.hover || (S.sel && S.sel.kind === 'node' ? S.sel.id : null);
+  const selLink = S.sel && S.sel.kind === 'link' ? S.sel.id : null;
+  const q = S.search.trim().toLowerCase();
+  let act = null;
+  if (focus){ act = new Set([focus].concat(M.adj[focus] || [])); }
+  else if (selLink){ const l = linkById(selLink); if (l) act = new Set([l.s, l.t]); }
+  gNodes.selectAll('g.node')
+    .style('opacity', d => { if (q) return d.name.toLowerCase().includes(q) ? 1 : 0.18; return !act || act.has(d.id) ? 1 : 0.18; })
+    .select('circle.ring-sel').style('display', d => (S.sel && S.sel.kind === 'node' && S.sel.id === d.id) || S.connectFrom === d.id || (q && d.name.toLowerCase().includes(q)) ? null : 'none');
+  gLinks.selectAll('path.link')
+    .attr('stroke', d => d.id === selLink ? '#b45309' : '#7c6f5d')
+    .style('opacity', d => {
+      if (selLink) return d.id === selLink ? 0.95 : 0.08;
+      if (focus) return (d.s === focus || d.t === focus) ? 0.85 : 0.06;
+      if (q) return 0.12;
+      return 0.42;
+    });
+}
+
+/* ---------- tooltip ---------- */
+function nodeTip(d){
+  let h = '<b>' + esc(d.name) + '</b><br><span style="opacity:.75">' + TYPES[d.type].label + ' · ' + (M.deg[d.id]||0) + ' เส้น · ความสำคัญรวม ' + (M.str[d.id]||0) + '</span>';
+  if (d.type === 'org' && d.role) h += '<br>บทบาท: ' + esc(d.role.length > 140 ? d.role.slice(0,140) + '…' : d.role);
+  if (d.note) h += '<br><i>' + esc(d.note.slice(0,120)) + '</i>';
+  return h;
+}
+function linkTip(l){
+  const a = nodeById(l.s), b = nodeById(l.t);
+  return '<b>' + esc(a && a.name) + ' — ' + esc(b && b.name) + '</b><br>ความสำคัญ ' + W(l) + ' (' + WL[W(l)] + ')' + (l.label ? '<br>' + esc(l.label) : '');
+}
+function showTip(e, html){ const t = $('#tip'); t.innerHTML = html; t.style.display = 'block'; moveTip(e); }
+function moveTip(e){ const t = $('#tip'), r = $('#stage').getBoundingClientRect(); let x = e.clientX - r.left + 14, y = e.clientY - r.top + 14; if (x + 270 > r.width) x = e.clientX - r.left - 270; t.style.left = x + 'px'; t.style.top = y + 'px'; }
+function hideTip(){ $('#tip').style.display = 'none'; }
+
+/* ---------- interactions ---------- */
+function onNodeClick(d){
+  if (S.tool === 'connect' && S.canWrite){
+    if (!S.connectFrom){ S.connectFrom = d.id; updateBanner(); renderGraph(); return; }
+    if (S.connectFrom === d.id){ S.connectFrom = null; tempLine.style('display','none'); updateBanner(); renderGraph(); return; }
+    const from = S.connectFrom; S.connectFrom = null; tempLine.style('display','none'); updateBanner();
+    createLink(from, d.id, 3);
+    return;
+  }
+  select({kind:'node', id:d.id});
+}
+function createLink(s, t, w){
+  if (s === t) return;
+  const ex = S.links.find(l => (l.s === s && l.t === t) || (l.s === t && l.t === s));
+  if (ex){ toast('มีเส้นเชื่อมนี้อยู่แล้ว'); select({kind:'link', id:ex.id}); return; }
+  const l = {id:newId('l'), s, t, w:w||3, label:'', created:Date.now()};
+  saveLink(l).then(() => { select({kind:'link', id:l.id}); toast('เชื่อมแล้ว — ปรับความสำคัญได้ที่แผงขวา'); });
+}
+function select(sel){
+  S.sel = sel;
+  if (sel) showTab('detail');
+  S.panelDirty = false;
+  renderGraph(); renderPanels(true);
+}
+function setTool(t){
+  S.tool = t; S.connectFrom = null; tempLine && tempLine.style('display','none');
+  $('#toolSelect').classList.toggle('on', t === 'select');
+  $('#toolConnect').classList.toggle('on', t === 'connect');
+  $('#net').classList.toggle('connect', t === 'connect');
+  $('#toolHint').textContent = t === 'connect'
+    ? 'คลิกโหนดต้นทาง แล้วคลิกโหนดปลายทางเพื่อสร้างเส้น (กด Esc เพื่อยกเลิก)'
+    : 'คลิกโหนดเพื่อดูรายละเอียด · ลากโหนดเพื่อเลื่อนตำแหน่งบนวง · เลื่อนลูกกลิ้ง/ถ่างนิ้วเพื่อซูม';
+  updateBanner(); renderGraph();
+}
+function updateBanner(){
+  const b = $('#banner');
+  if (S.tool !== 'connect'){ b.style.display = 'none'; return; }
+  const f = S.connectFrom && nodeById(S.connectFrom);
+  b.innerHTML = (f ? 'จาก <b>' + esc(f.name) + '</b> → คลิกโหนดปลายทาง' : 'โหมดวาดเส้น: คลิกโหนดต้นทาง') + '<button id="bannerX">เสร็จ</button>';
+  b.style.display = 'block';
+  $('#bannerX').onclick = () => setTool('select');
+}
+function showTab(t){
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('sel', b.dataset.tab === t));
+  document.querySelectorAll('.tab').forEach(el => el.classList.toggle('sel', el.id === 'tab-' + t));
+}
+
+async function addNode(){
+  const name = $('#addName').value.trim();
+  if (!name){ $('#addName').focus(); return; }
+  if (!S.pid){ toast('สร้างโปรเจคก่อน'); return; }
+  if (S.nodes.some(n => n.type === S.addType && n.name.trim() === name)){ toast('มีชื่อนี้อยู่แล้ว'); return; }
+  const n = {id:newId('n'), name, type:S.addType, role:'', note:'', a:null, created:Date.now()};
+  $('#addName').value = '';
+  await saveNode(n);
+  select({kind:'node', id:n.id});
+  setTimeout(() => { const r = $('#d-role'); if (r) r.focus(); }, 50);
+}
+async function deleteNode(id){
+  const ls = S.links.filter(l => l.s === id || l.t === id);
+  for (const l of ls) await write(() => STORE.del(lPath(S.pid, l.id)));
+  await write(() => STORE.del(nPath(S.pid, id)));
+  select(null); toast('ลบแล้ว');
+}
+
+/* ---------- panels ---------- */
+function panelBusy(){
+  const a = document.activeElement;
+  return a && a.closest && a.closest('aside.right') && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.type !== 'range';
+}
+function renderPanels(force){
+  if (!force && panelBusy()){ S.panelDirty = true; return; }
+  S.panelDirty = false;
+  renderRoles(); renderDetail(); renderAnalysis();
+}
+function renderAll(){
+  computeMetrics();
+  renderGraph();
+  renderPanels(false);
+  renderEmpty();
+}
+function renderEmpty(){
+  if (!S.loaded) return;
+  if (!S.projects.length){
+    showEmpty('<b>ยังไม่มีโปรเจค</b><p class="muted">' + (S.canWrite ? 'สร้างโปรเจคแรก หรือนำเข้าข้อมูลตัวอย่างศูนย์เรียนรู้น่าน' : 'ยังไม่มีข้อมูลให้แสดง') + '</p>' +
+      (S.canWrite ? '<div class="row" style="justify-content:center"><button class="btn primary" id="eNew">+ สร้างโปรเจค</button>' + (S.mode !== 'claude' ? '<button class="btn" id="eSeed">นำเข้าตัวอย่าง</button>' : '') + '</div>' : ''));
+    const a = $('#eNew'); if (a) a.onclick = () => projDialog(null);
+    const b = $('#eSeed'); if (b) b.onclick = () => importFromUrl('data.json');
+  } else if (!S.nodes.length){
+    showEmpty('<b>โปรเจคนี้ยังว่าง</b><p class="muted">' + (S.canWrite ? 'เริ่มจากเพิ่ม <b>ประเด็น</b> (วงใน) ที่แผงซ้าย แล้วเพิ่มหน่วยงานและบุคคล จากนั้นใช้ "วาดเส้น" เชื่อมโยง' : 'ยังไม่มีข้อมูลในโปรเจคนี้') + '</p>');
+  } else $('#empty').style.display = 'none';
+}
+function showEmpty(html){ $('#emptyBox').innerHTML = html; $('#empty').style.display = 'flex'; }
+
+function chipsFor(n, type){
+  const out = [];
+  S.links.forEach(l => {
+    const o = l.s === n.id ? l.t : (l.t === n.id ? l.s : null); if (!o) return;
+    const on = nodeById(o); if (on && on.type === type) out.push({n:on, w:W(l)});
+  });
+  out.sort((a,b) => b.w - a.w);
+  return out.map(x => '<span class="chip ' + type + '" title="ความสำคัญ ' + x.w + '">' + esc(x.n.name) + ' · ' + x.w + '</span>').join('');
+}
+function renderRoles(){
+  const el = $('#tab-roles');
+  const orgs = S.nodes.filter(n => n.type === 'org').sort((a,b) => (M.str[b.id]||0) - (M.str[a.id]||0) || a.name.localeCompare(b.name, 'th'));
+  if (!orgs.length){ el.innerHTML = '<p class="muted">ยังไม่มีหน่วยงาน' + (S.canWrite ? ' — เพิ่มที่แผงซ้าย (เลือก "หน่วยงาน")' : '') + '</p>'; return; }
+  el.innerHTML = '<p class="muted" style="margin-top:0;font-size:12.5px">บทบาทของแต่ละหน่วยงาน (เรียงตามความสำคัญรวมของเส้น)' + (S.canWrite ? ' · คลิกการ์ดเพื่อแก้ไข' : '') + '</p>' +
+    orgs.map(o => {
+      const sel = S.sel && S.sel.kind === 'node' && S.sel.id === o.id;
+      return '<div class="role-card' + (sel ? ' sel' : '') + '" data-n="' + esc(o.id) + '">' +
+        '<div class="rc-h"><span class="dot org"></span><b>' + esc(o.name) + '</b><small>' + (M.deg[o.id]||0) + ' เส้น</small></div>' +
+        '<div class="rc-role">' + (o.role ? esc(o.role) : '<i>ยังไม่ได้ระบุบทบาท' + (S.canWrite ? ' — คลิกเพื่อพิมพ์' : '') + '</i>') + '</div>' +
+        '<div class="chips">' + chipsFor(o, 'issue') + '</div>' +
+        '<div class="chips">' + chipsFor(o, 'person') + '</div></div>';
+    }).join('');
+  el.querySelectorAll('.role-card').forEach(c => c.onclick = () => {
+    const id = c.dataset.n; select({kind:'node', id});
+    setTimeout(() => { const r = $('#d-role'); if (r && S.canWrite){ r.focus(); r.setSelectionRange(r.value.length, r.value.length); } }, 30);
+  });
+}
+
+function renderDetail(){
+  const el = $('#tab-detail');
+  const ro = S.canWrite ? '' : ' disabled';
+  if (!S.sel){ el.innerHTML = '<p class="muted">คลิกโหนดหรือเส้นในแผนภาพเพื่อดูและแก้ไขรายละเอียด</p>'; return; }
+  if (S.sel.kind === 'link'){
+    const l = linkById(S.sel.id); if (!l){ el.innerHTML = '<p class="muted">เส้นนี้ถูกลบแล้ว</p>'; return; }
+    const a = nodeById(l.s), b = nodeById(l.t);
+    el.innerHTML = '<div class="det-head">เส้นเชื่อมโยง</div>' +
+      '<div class="det-title"><span class="dot ' + (a?a.type:'') + '"></span> <a href="#" data-n="' + esc(l.s) + '">' + esc(a && a.name) + '</a> — <span class="dot ' + (b?b.type:'') + '"></span> <a href="#" data-n="' + esc(l.t) + '">' + esc(b && b.name) + '</a></div>' +
+      '<label>ระดับความสำคัญ (ความหนาเส้น): <b id="lwv">' + W(l) + ' · ' + WL[W(l)] + '</b></label>' +
+      '<input type="range" id="lw" min="1" max="5" step="1" value="' + W(l) + '" style="width:100%"' + ro + '>' +
+      '<label>บทบาท / ลักษณะความสัมพันธ์<textarea id="ll" rows="3" placeholder="เช่น สนับสนุนงบประมาณ, ให้ความรู้, รับซื้อผลผลิต"' + ro + '>' + esc(l.label) + '</textarea></label>' +
+      (S.canWrite ? '<div class="row"><button class="btn primary" id="lsave">บันทึก</button><button class="btn danger" id="ldel">ลบเส้น</button></div>' : '');
+    el.querySelectorAll('a[data-n]').forEach(x => x.onclick = e => { e.preventDefault(); select({kind:'node', id:x.dataset.n}); });
+    if (!S.canWrite) return;
+    $('#lw').oninput = e => { $('#lwv').textContent = e.target.value + ' · ' + WL[e.target.value]; };
+    $('#lw').onchange = e => saveLink(Object.assign({}, l, {w:+e.target.value}));
+    $('#lsave').onclick = () => { saveLink(Object.assign({}, l, {w:+$('#lw').value, label:$('#ll').value.trim()})); toast('บันทึกแล้ว'); $('#lsave').blur(); };
+    armDelete($('#ldel'), async () => { await write(() => STORE.del(lPath(S.pid, l.id))); select(null); });
+    return;
+  }
+  const n = nodeById(S.sel.id); if (!n){ el.innerHTML = '<p class="muted">รายการนี้ถูกลบแล้ว</p>'; return; }
+  const conns = S.links.filter(l => l.s === n.id || l.t === n.id).map(l => ({l, o:nodeById(l.s === n.id ? l.t : l.s)})).filter(x => x.o)
+    .sort((a,b) => ORDER.indexOf(a.o.type) - ORDER.indexOf(b.o.type) || W(b.l) - W(a.l));
+  const linked = new Set(conns.map(c => c.o.id).concat([n.id]));
+  const opts = ORDER.map(t => {
+    const items = S.nodes.filter(x => x.type === t && !linked.has(x.id)).sort((a,b) => a.name.localeCompare(b.name, 'th'));
+    return items.length ? '<optgroup label="' + TYPES[t].label + '">' + items.map(x => '<option value="' + esc(x.id) + '">' + esc(x.name) + '</option>').join('') + '</optgroup>' : '';
+  }).join('');
+  el.innerHTML =
+    '<div class="det-head"><span class="dot ' + n.type + '"></span>' + TYPES[n.type].label + ' · ' + (M.deg[n.id]||0) + ' เส้น · ความสำคัญรวม ' + (M.str[n.id]||0) + '</div>' +
+    '<div class="det-title">' + esc(n.name) + '</div>' +
+    (n.type === 'org' ? '<label>บทบาทของหน่วยงาน<textarea id="d-role" rows="4" placeholder="พิมพ์บทบาท เช่น สนับสนุนเมล็ดพันธุ์ จัดอบรม รับซื้อผลผลิต"' + ro + '>' + esc(n.role) + '</textarea></label>' : '') +
+    '<label>ชื่อ<input type="text" id="d-name" maxlength="120" value="' + esc(n.name) + '"' + ro + '></label>' +
+    '<label>วง / ประเภท<select id="d-type"' + ro + '>' + ORDER.map(t => '<option value="' + t + '"' + (t === n.type ? ' selected' : '') + '>' + TYPES[t].label + '</option>').join('') + '</select></label>' +
+    '<label>หมายเหตุ / ข้อมูลติดต่อ<textarea id="d-note" rows="2"' + ro + '>' + esc(n.note) + '</textarea></label>' +
+    (S.canWrite ? '<div class="row"><button class="btn primary" id="d-save">บันทึก</button><button class="btn danger" id="d-del">ลบ</button></div>' : '') +
+    '<h4>การเชื่อมโยง (' + conns.length + ')</h4>' +
+    (conns.length ? '<ul class="conn">' + conns.map(c => '<li data-l="' + esc(c.l.id) + '"><span class="dot ' + c.o.type + '"></span><a href="#" data-n="' + esc(c.o.id) + '" title="' + esc(c.l.label || c.o.name) + '">' + esc(c.o.name) + '</a><input type="range" class="cw" min="1" max="5" value="' + W(c.l) + '" title="ความสำคัญ"' + ro + '><span class="wv">' + W(c.l) + '</span>' + (S.canWrite ? '<button class="x" title="ลบเส้น">×</button>' : '<span></span>') + '</li>').join('') + '</ul>' : '<p class="muted" style="font-size:13px">ยังไม่มีเส้นเชื่อม</p>') +
+    (S.canWrite && opts ? '<div class="addlink"><select id="d-target">' + opts + '</select><select id="d-w">' + [1,2,3,4,5].map(w => '<option value="' + w + '"' + (w === 3 ? ' selected' : '') + '>' + w + '</option>').join('') + '</select><button class="btn" id="d-link">+ เชื่อม</button></div><p class="hint">เลือกรายการแล้วกำหนดความสำคัญ 1–5</p>' : '');
+  el.querySelectorAll('a[data-n]').forEach(x => x.onclick = e => { e.preventDefault(); select({kind:'node', id:x.dataset.n}); });
+  if (!S.canWrite) return;
+  $('#d-save').onclick = () => {
+    const name = $('#d-name').value.trim(); if (!name){ toast('กรุณาใส่ชื่อ'); return; }
+    const type = $('#d-type').value;
+    const upd = Object.assign({}, n, {name, type, note:$('#d-note').value.trim(), role:$('#d-role') ? $('#d-role').value.trim() : (n.role||'')});
+    if (type !== n.type) upd.a = null;
+    saveNode(upd).then(() => toast('บันทึกแล้ว')); $('#d-save').blur();
+  };
+  const rl = $('#d-role');
+  if (rl) rl.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) $('#d-save').click(); });
+  $('#d-name').addEventListener('keydown', e => { if (e.key === 'Enter') $('#d-save').click(); });
+  armDelete($('#d-del'), () => deleteNode(n.id));
+  el.querySelectorAll('ul.conn li').forEach(li => {
+    const l = linkById(li.dataset.l);
+    const r = li.querySelector('.cw');
+    r.oninput = () => { li.querySelector('.wv').textContent = r.value; };
+    r.onchange = () => saveLink(Object.assign({}, l, {w:+r.value}));
+    li.querySelector('.x').onclick = () => write(() => STORE.del(lPath(S.pid, l.id)));
+  });
+  const dl = $('#d-link'); if (dl) dl.onclick = () => {
+    const t = $('#d-target').value; if (!t) return;
+    const l = {id:newId('l'), s:n.id, t, w:+$('#d-w').value, label:'', created:Date.now()};
+    saveLink(l);
+  };
+}
+function armDelete(btn, fn){
+  if (!btn) return;
+  btn.onclick = () => {
+    if (btn.classList.contains('armed')){ fn(); return; }
+    btn.classList.add('armed'); const old = btn.textContent; btn.textContent = 'ยืนยันลบ?';
+    setTimeout(() => { if (btn.isConnected){ btn.classList.remove('armed'); btn.textContent = old; } }, 3000);
+  };
+}
+
+function bars(items, fmt){
+  const mx = Math.max(0.0001, ...items.map(x => x.v));
+  return '<div class="bars">' + items.map(x => '<div class="b" data-n="' + esc(x.n.id) + '"><span><i class="dot ' + x.n.type + '"></i>' + esc(x.n.name) + '</span><div class="track"><div class="fill" style="width:' + (x.v/mx*100).toFixed(1) + '%"></div></div><span class="v">' + fmt(x.v) + '</span></div>').join('') + '</div>';
+}
+function renderAnalysis(){
+  const el = $('#tab-analysis');
+  const N = S.nodes.length;
+  if (!N){ el.innerHTML = '<p class="muted">ยังไม่มีข้อมูลให้วิเคราะห์</p>'; return; }
+  const cnt = t => S.nodes.filter(n => n.type === t).length;
+  const ids = new Set(S.nodes.map(n => n.id));
+  const E = S.links.filter(l => ids.has(l.s) && ids.has(l.t) && l.s !== l.t).length;
+  const dens = N > 1 ? (2*E / (N*(N-1))) : 0;
+  const avg = N ? (2*E / N) : 0;
+  const top = (src, k) => S.nodes.map(n => ({n, v:src[n.id]||0})).filter(x => x.v > 0).sort((a,b) => b.v - a.v).slice(0, k);
+  // issue coverage
+  const issues = S.nodes.filter(n => n.type === 'issue');
+  const cov = issues.map(i => {
+    const nb = M.adj[i.id] || [];
+    const orgs = nb.filter(o => (nodeById(o)||{}).type === 'org');
+    const ppl = new Set();
+    nb.forEach(o => { const on = nodeById(o); if (on && on.type === 'person') ppl.add(o); });
+    orgs.forEach(o => (M.adj[o] || []).forEach(p => { const pn = nodeById(p); if (pn && pn.type === 'person') ppl.add(p); }));
+    return {n:i, orgs:orgs.length, ppl:ppl.size, s:M.str[i.id]||0};
+  }).sort((a,b) => b.s - a.s);
+  const minS = cov.length ? Math.min(...cov.map(c => c.s)) : 0;
+  const bridges = S.nodes.filter(n => n.type === 'org').map(o => ({n:o, v:(M.adj[o.id]||[]).filter(x => (nodeById(x)||{}).type === 'issue').length})).filter(x => x.v >= 2).sort((a,b) => b.v - a.v);
+  const iso = S.nodes.filter(n => !(M.deg[n.id] > 0));
+  el.innerHTML =
+    '<div class="kpis"><div class="kpi"><b>' + cnt('issue') + '</b><span>ประเด็น</span></div><div class="kpi"><b>' + cnt('org') + '</b><span>หน่วยงาน</span></div><div class="kpi"><b>' + cnt('person') + '</b><span>บุคคล</span></div>' +
+    '<div class="kpi"><b>' + E + '</b><span>เส้นเชื่อม</span></div><div class="kpi"><b>' + avg.toFixed(1) + '</b><span>เส้นเฉลี่ย/โหนด</span></div><div class="kpi"><b>' + (dens*100).toFixed(1) + '%</b><span>ความหนาแน่น</span></div></div>' +
+    '<h4>ศูนย์กลางเครือข่าย (ผลรวมความสำคัญของเส้น)</h4>' + bars(top(M.str, 8), v => v) +
+    '<h4>ตัวเชื่อม / สะพาน (betweenness)</h4><p class="hint" style="margin-top:0">โหนดที่อยู่บนเส้นทางสั้นที่สุดระหว่างคนอื่นบ่อย — ถ้าหายไปเครือข่ายจะขาดการเชื่อม</p>' + bars(top(M.bc, 8), v => v.toFixed(2)) +
+    (cov.length ? '<h4>ความครอบคลุมของแต่ละประเด็น</h4><table class="cov"><tr><th>ประเด็น</th><th>หน่วยงาน</th><th>บุคคล*</th><th>ความสำคัญรวม</th></tr>' +
+      cov.map(c => '<tr' + (c.s === minS && cov.length > 1 ? ' class="low" title="ประเด็นที่ควรเสริมการเชื่อมโยง"' : '') + '><td>' + esc(c.n.name) + '</td><td>' + c.orgs + '</td><td>' + c.ppl + '</td><td>' + c.s + '</td></tr>').join('') +
+      '</table><p class="hint">* บุคคลที่เชื่อมตรง หรือผ่านหน่วยงาน · สีแดง = ประเด็นที่ควรเสริม</p>' : '') +
+    (bridges.length ? '<h4>หน่วยงานที่เชื่อมหลายประเด็น</h4>' + bars(bridges, v => v + ' ประเด็น') : '') +
+    (iso.length ? '<h4>ยังไม่มีการเชื่อมโยง (' + iso.length + ')</h4><div class="chips">' + iso.map(n => '<span class="chip ' + n.type + '">' + esc(n.name) + '</span>').join('') + '</div>' : '');
+  el.querySelectorAll('.b[data-n]').forEach(b => b.onclick = () => select({kind:'node', id:b.dataset.n}));
+}
+
+/* ---------- projects ---------- */
+function modal(html){ $('#modalBox').innerHTML = html; $('#modal').style.display = 'flex'; }
+function closeModal(){ $('#modal').style.display = 'none'; }
+function projDialog(p){
+  modal('<h3>' + (p ? 'แก้ไขโปรเจค' : 'สร้างโปรเจคใหม่') + '</h3>' +
+    '<label>ชื่อโปรเจค<input type="text" id="pName" maxlength="100" value="' + esc(p ? p.name : '') + '"></label>' +
+    '<label>คำอธิบาย<textarea id="pDesc" rows="3">' + esc(p ? p.desc : '') + '</textarea></label>' +
+    '<div class="row"><button class="btn primary" id="pOk">' + (p ? 'บันทึก' : 'สร้าง') + '</button><button class="btn" id="pCancel">ยกเลิก</button><span class="spacer"></span>' + (p ? '<button class="btn danger" id="pDel">ลบโปรเจค</button>' : '') + '</div>');
+  $('#pName').focus();
+  $('#pCancel').onclick = closeModal;
+  $('#pOk').onclick = async () => {
+    const name = $('#pName').value.trim(); if (!name){ $('#pName').focus(); return; }
+    const id = p ? p.id : newId('p');
+    await write(() => STORE.set(pPath(id), {name, desc:$('#pDesc').value.trim(), created:p ? (p.created||Date.now()) : Date.now()}));
+    closeModal();
+    if (!p){ S.pid = null; location.hash = 'p-' + id; openProject(id); }
+  };
+  if (p) armDelete($('#pDel'), async () => {
+    const pid = p.id; closeModal();
+    const ns = S.pid === pid ? S.nodes.slice() : [], ls = S.pid === pid ? S.links.slice() : [];
+    for (const l of ls) await write(() => STORE.del(lPath(pid, l.id)));
+    for (const n of ns) await write(() => STORE.del(nPath(pid, n.id)));
+    await write(() => STORE.del(pPath(pid)));
+    S.pid = null; history.replaceState(null, '', location.pathname); toast('ลบโปรเจคแล้ว');
+  });
+}
+
+/* ---------- import / export ---------- */
+function projectData(){
+  const p = S.projects.find(x => x.id === S.pid) || {};
+  return {format:'nannetwork-v1', exported:new Date().toISOString(), projects:[{id:S.pid, name:p.name||'', desc:p.desc||'', created:p.created||Date.now(),
+    nodes:S.nodes.map(n => Object.assign({id:n.id}, nodeBody(n))), links:S.links.map(l => Object.assign({id:l.id}, linkBody(l)))}]};
+}
+function download(name, blob){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function exportJson(){
+  const txt = JSON.stringify(projectData(), null, 1);
+  modal('<h3>ส่งออกข้อมูล (JSON)</h3><p class="muted" style="font-size:13px">ใช้สำรองข้อมูล หรือย้ายไประบบอื่น (เช่น จาก Claude ไป GitHub Pages) ด้วยปุ่ม "นำเข้า JSON"</p>' +
+    '<textarea id="jx" rows="10" readonly style="font-family:monospace;font-size:12px">' + esc(txt) + '</textarea>' +
+    '<div class="row"><button class="btn primary" id="jCopy">คัดลอก</button>' + (S.mode !== 'claude' ? '<button class="btn" id="jDl">ดาวน์โหลดไฟล์</button>' : '') + '<button class="btn" id="jClose">ปิด</button></div>');
+  $('#jClose').onclick = closeModal;
+  $('#jCopy').onclick = () => { navigator.clipboard.writeText(txt).then(() => toast('คัดลอกแล้ว'), () => { $('#jx').select(); toast('กด Ctrl+C เพื่อคัดลอก'); }); };
+  const d = $('#jDl'); if (d) d.onclick = () => download('nannetwork-' + (S.pid||'data') + '.json', new Blob([txt], {type:'application/json'}));
+}
+async function importData(obj, quiet){
+  let projs = [];
+  if (obj && Array.isArray(obj.projects)) projs = obj.projects;
+  else if (obj && Array.isArray(obj.nodes)) projs = [obj];
+  if (!projs.length){ toast('รูปแบบไฟล์ไม่ถูกต้อง'); return; }
+  let firstId = null;
+  for (const p of projs){
+    let pid = p.id && /^[A-Za-z0-9_\-]+$/.test(p.id) ? p.id : newId('p');
+    if (S.projects.some(x => x.id === pid)) pid = newId('p');
+    firstId = firstId || pid;
+    await write(() => STORE.set(pPath(pid), {name:p.name || 'โปรเจคนำเข้า', desc:p.desc || '', created:p.created || Date.now()}));
+    const idmap = {};
+    for (const n of (p.nodes || [])){
+      if (!TYPES[n.type]) continue;
+      const id = n.id && /^[A-Za-z0-9_\-]+$/.test(n.id) ? n.id : newId('n'); idmap[n.id] = id;
+      await write(() => STORE.set(nPath(pid, id), nodeBody(n)));
+    }
+    for (const l of (p.links || [])){
+      const s = idmap[l.s], t = idmap[l.t]; if (!s || !t) continue;
+      const id = l.id && /^[A-Za-z0-9_\-]+$/.test(l.id) ? l.id : newId('l');
+      await write(() => STORE.set(lPath(pid, id), linkBody(Object.assign({}, l, {s, t}))));
+    }
+  }
+  if (!quiet) toast('นำเข้าแล้ว ' + projs.length + ' โปรเจค');
+  if (firstId && S.loaded){ S.pid = null; openProject(firstId); renderProjSel(firstId); }
+}
+async function importFromUrl(url, quiet){
+  try { const r = await fetch(url, {cache:'no-store'}); if (!r.ok) throw 0; await importData(await r.json(), quiet); }
+  catch(e){ if (!quiet) toast('โหลดข้อมูลตัวอย่างไม่ได้'); }
+}
+function exportPng(){
+  const node = $('#net').cloneNode(true);
+  node.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  node.setAttribute('width', 2400); node.setAttribute('height', 2400);
+  node.querySelector('g').removeAttribute('transform');
+  const st = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+  st.textContent = 'text{font-family:"IBM Plex Sans Thai",Tahoma,sans-serif}.halo{paint-order:stroke;stroke:#fff;stroke-width:3.5px;stroke-linejoin:round}.link{fill:none;stroke-linecap:round}.linkhit{display:none}';
+  node.insertBefore(st, node.firstChild);
+  node.querySelectorAll('path.link').forEach(p => p.setAttribute('stroke', p.getAttribute('stroke') || '#7c6f5d'));
+  node.querySelectorAll('g.node').forEach(g => g.style.opacity = 1);
+  node.querySelectorAll('path.link').forEach(p => p.style.opacity = 0.5);
+  node.querySelectorAll('circle.ring-sel').forEach(c => c.style.display = 'none');
+  const xml = new XMLSerializer().serializeToString(node);
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas'); c.width = 2400; c.height = 2400;
+    const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 2400, 2400); ctx.drawImage(img, 0, 0);
+    c.toBlob(b => download('nannetwork-' + (S.pid||'') + '.png', b), 'image/png');
+  };
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+}
+
+/* ---------- UI bindings ---------- */
+function bindUI(){
+  $('#wlegend').innerHTML = [1,2,3,4,5].map(w => '<div class="wl"><i style="height:' + WW[w] + 'px"></i>' + w + ' · ' + WL[w] + '</div>').join('');
+  document.querySelectorAll('#addTypes button').forEach(b => b.onclick = () => {
+    S.addType = b.dataset.type;
+    document.querySelectorAll('#addTypes button').forEach(x => x.classList.toggle('sel', x === b));
+    $('#addName').placeholder = PLACEHOLDER[S.addType]; $('#addName').focus();
+  });
+  $('#addName').placeholder = PLACEHOLDER.issue;
+  $('#addBtn').onclick = addNode;
+  $('#addName').addEventListener('keydown', e => { if (e.key === 'Enter') addNode(); });
+  $('#toolSelect').onclick = () => setTool('select');
+  $('#toolConnect').onclick = () => setTool(S.tool === 'connect' ? 'select' : 'connect');
+  $('#search').oninput = e => { S.search = e.target.value; applyHighlight(); };
+  $('#minW').oninput = e => { S.minW = +e.target.value; $('#minWv').textContent = S.minW; renderGraph(); };
+  $('#sizeBy').onchange = e => { S.sizeBy = e.target.value; renderGraph(); };
+  $('#autoLayout').onclick = async () => {
+    const fixed = S.nodes.filter(n => typeof n.a === 'number');
+    if (!fixed.length){ toast('จัดเรียงอัตโนมัติอยู่แล้ว'); return; }
+    for (const n of fixed) await saveNode(Object.assign({}, n, {a:null}));
+    toast('จัดเรียงใหม่แล้ว');
+  };
+  $('#zIn').onclick = () => zoomBy(1.3); $('#zOut').onclick = () => zoomBy(1/1.3); $('#zFit').onclick = () => zoomFit();
+  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+  $('#projSel').onchange = e => { const id = e.target.value; if (S.projects.some(p => p.id === id)) openProject(id); };
+  $('#projNew').onclick = () => projDialog(null);
+  $('#projEdit').onclick = () => { const p = S.projects.find(x => x.id === S.pid); if (p) projDialog(p); };
+  $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+  $('#expJson').onclick = exportJson;
+  $('#expPng').onclick = exportPng;
+  $('#impJson').onclick = () => $('#impFile').click();
+  $('#impFile').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { await importData(JSON.parse(await f.text())); } catch(err){ toast('อ่านไฟล์ไม่ได้'); }
+    e.target.value = '';
+  };
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape'){
+      if ($('#modal').style.display === 'flex'){ closeModal(); return; }
+      if (S.connectFrom){ S.connectFrom = null; tempLine.style('display','none'); updateBanner(); renderGraph(); }
+      else if (S.tool === 'connect') setTool('select');
+      else if (S.sel) select(null);
+    }
+  });
+  $('aside.right').addEventListener('focusout', () => setTimeout(() => { if (S.panelDirty && !panelBusy()) renderPanels(true); }, 120));
+  window.addEventListener('hashchange', () => { const h = location.hash.replace(/^#p-/, ''); if (h && h !== S.pid && S.projects.some(p => p.id === h)){ renderProjSel(h); openProject(h); } });
+}
+
+init();
+})();
+</script>
+</body>
+</html>
