@@ -78,6 +78,11 @@ label>input,label>textarea,label>select{margin-top:3px;color:var(--ink);font-siz
 .zoom button{width:32px;height:32px;padding:0;font-size:16px}
 .banner{position:absolute;left:50%;transform:translateX(-50%);top:10px;background:#3d3a35;color:#fff;font-size:13px;padding:6px 12px;border-radius:999px;display:none;pointer-events:auto}
 .banner button{margin-left:8px;background:transparent;border:1px solid #fff8;color:#fff;border-radius:999px;padding:1px 8px;cursor:pointer}
+.banner.fb{top:auto;bottom:14px;background:#9a4708;max-width:92%;text-align:center}
+.fchips{display:flex;flex-wrap:wrap;gap:5px}
+.fchip{border:1px solid var(--issue);background:var(--issue-bg);border-radius:999px;padding:3px 10px;cursor:pointer;font-size:12.5px}
+.fchip:hover{border-color:var(--issue-s)}
+.fchip.on{background:var(--issue);border-color:var(--issue-s);font-weight:600}
 .empty{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;pointer-events:none}
 .empty>div{background:rgba(255,255,255,.94);border:1px dashed #cfc6b8;border-radius:14px;padding:18px 22px;max-width:360px;pointer-events:auto}
 #tip{position:absolute;pointer-events:none;background:#2d2a26;color:#fff;font-size:12px;padding:7px 9px;border-radius:8px;max-width:260px;display:none;line-height:1.45;z-index:5}
@@ -194,6 +199,13 @@ footer{display:none}
       <div class="row edit-only"><button class="btn sm" id="autoLayout">จัดเรียงอัตโนมัติ</button></div>
     </div>
 
+    <div class="sec">
+      <h3>กรองตามประเด็น</h3>
+      <div class="fchips" id="focusChips"></div>
+      <p class="hint">เลือกประเด็น (ได้หลายข้อ) เพื่อแสดงเฉพาะหน่วยงานและบุคคลที่เกี่ยวข้อง · ดับเบิลคลิกวงประเด็นในแผนภาพก็ได้</p>
+      <div class="row"><button class="btn sm" id="focusClear" disabled>แสดงทั้งหมด</button></div>
+    </div>
+
     <div class="sec legend">
       <h3>คำอธิบาย</h3>
       <div><span class="dot issue"></span>วงใน · ประเด็น</div>
@@ -219,6 +231,7 @@ footer{display:none}
     <div class="ovl key"><span><i class="dot issue"></i>ประเด็น</span><span><i class="dot org"></i>หน่วยงาน</span><span><i class="dot person"></i>บุคคล</span></div>
     <div class="zoom"><button class="btn" id="zIn" title="ซูมเข้า">+</button><button class="btn" id="zOut" title="ซูมออก">−</button><button class="btn" id="zFit" title="พอดีจอ">⟲</button></div>
     <div class="banner" id="banner"></div>
+    <div class="banner fb" id="fbanner"></div>
     <div class="empty" id="empty"><div id="emptyBox"></div></div>
     <div id="tip"></div>
   </section>
@@ -248,7 +261,10 @@ const TYPES = {
   person:{label:'บุคคล', ring:2, fill:'#BBF7D0', stroke:'#1F9D55', base:9}
 };
 const ORDER = ['issue','org','person'];
-const RING_R = [150, 300, 440];
+let RING_R = [150, 300, 440];
+let GEO = {R:RING_R, baseO:14, baseP:9, fO:15, fP:14.5, radialO:false, ext:600};
+let curVB = 600;
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
 const WW = {1:1.2, 2:2.6, 3:4.2, 4:6.2, 5:8.6};
 const WL = {1:'น้อย', 2:'ค่อนข้างน้อย', 3:'ปานกลาง', 4:'สำคัญ', 5:'สำคัญมาก'};
 const PLACEHOLDER = {issue:'ชื่อประเด็น เช่น ความมั่นคงทางอาหาร', org:'ชื่อหน่วยงาน', person:'ชื่อบุคคล'};
@@ -256,7 +272,7 @@ const PLACEHOLDER = {issue:'ชื่อประเด็น เช่น ค�
 /* ---------- state ---------- */
 const S = {mode:'local', canWrite:true, projects:[], pid:null, nodes:[], links:[], sel:null,
   tool:'select', connectFrom:null, hover:null, minW:1, sizeBy:'degree', search:'', tmpA:{},
-  addType:'issue', loaded:false, user:null, panelDirty:false};
+  addType:'issue', loaded:false, focus:new Set(), vis:null, user:null, panelDirty:false};
 let STORE = null, M = {adj:{},deg:{},str:{},bc:{}}, POS = {};
 let unsubN = null, unsubL = null;
 
@@ -411,7 +427,7 @@ function subscribeProjects(){
 }
 function openProject(pid){
   if (unsubN) unsubN(); if (unsubL) unsubL();
-  S.pid = pid; S.nodes = []; S.links = []; S.sel = null; S.connectFrom = null; S.tmpA = {};
+  S.pid = pid; S.nodes = []; S.links = []; S.sel = null; S.focus = new Set(); S.connectFrom = null; S.tmpA = {};
   zoomFit(true);
   if (pid){
     try { if (location.hash !== '#p-' + pid) history.replaceState(null, '', '#p-' + pid); } catch(e){}
@@ -458,10 +474,42 @@ function circMean(arr){ // [{a,w}]
   let x = 0, y = 0; arr.forEach(o => { x += Math.cos(o.a) * o.w; y += Math.sin(o.a) * o.w; });
   return (x === 0 && y === 0) ? null : Math.atan2(y, x);
 }
+function visibleSet(){
+  if (!S.focus.size) return null;
+  const vis = new Set(S.focus), orgs = new Set();
+  const nb = (set, fn) => S.links.forEach(l => { if (set.has(l.s)) fn(l.t); if (set.has(l.t)) fn(l.s); });
+  nb(S.focus, id => { const n = nodeById(id); if (n && n.type !== 'issue'){ vis.add(id); if (n.type === 'org') orgs.add(id); } });
+  nb(orgs, id => { const n = nodeById(id); if (n && n.type === 'person') vis.add(id); });
+  return vis;
+}
+function maxLen(list, cap){ let m = 0; list.forEach(n => { m = Math.max(m, Math.min(cap, String(n.name||'').length)); }); return m; }
+// ring radii, node & font sizes and drawing extent scale with how many items each ring holds
+function computeGeometry(by){
+  const nI = by.issue.length, nO = by.org.length, nP = by.person.length;
+  const radialO = nO > 24;
+  const R0 = Math.max(150, nI * 80 / TAU);
+  let R1 = Math.max(300, R0 + 130, nO * (radialO ? 30 : 50) / TAU);
+  R1 = Math.min(R1, 600);
+  const arcO = TAU * R1 / Math.max(nO, 1);
+  const baseO = radialO ? clamp(arcO * 0.42, 5, 14) : 14;
+  const fO = radialO ? clamp(arcO * 0.72, 8, 13.5) : 15;
+  const lenO = radialO ? maxLen(by.org, 22) * fO * 0.6 + baseO + 14 : 0;
+  let R2 = Math.max(440, R1 + 140 + lenO, nP * 18 / TAU);
+  R2 = Math.min(R2, Math.max(1100, R1 + 140 + lenO));
+  const arcP = TAU * R2 / Math.max(nP, 1);
+  const baseP = clamp(arcP * 0.42, 3.5, 9);
+  const fP = clamp(arcP * 0.8, 7.5, 14.5);
+  const lenP = nP ? maxLen(by.person, 24) * fP * 0.6 + baseP * 1.5 + 12 : 0;
+  const ext = Math.max(600, R2 + lenP + 24, R1 + (radialO ? lenO : 170) + 30);
+  GEO = {R:[R0, R1, R2], baseO, baseP, fO, fP, radialO, ext};
+  RING_R = GEO.R;
+}
 function computeLayout(){
   POS = {};
+  S.vis = visibleSet();
   const by = {issue:[], org:[], person:[]};
-  S.nodes.forEach(n => by[n.type].push(n));
+  S.nodes.forEach(n => { if (!S.vis || S.vis.has(n.id)) by[n.type].push(n); });
+  computeGeometry(by);
   ORDER.forEach(t => by[t].sort((a,b) => (a.created||0) - (b.created||0) || String(a.id).localeCompare(String(b.id))));
   const wts = {}; // neighbour weights
   S.links.forEach(l => { (wts[l.s] = wts[l.s] || []).push({o:l.t, w:W(l)}); (wts[l.t] = wts[l.t] || []).push({o:l.s, w:W(l)}); });
@@ -469,7 +517,7 @@ function computeLayout(){
     const list = by[t], N = list.length; if (!N) return;
     const r = RING_R[ri], step = TAU / N;
     const free = [];
-    list.forEach(n => { const a = angleOf(n); if (a !== null) POS[n.id] = {a, r}; else free.push(n); });
+    list.forEach(n => { const a = S.vis ? null : angleOf(n); if (a !== null) POS[n.id] = {a, r}; else free.push(n); });
     // target angle from already-placed inner neighbours
     free.forEach(n => {
       const nb = (wts[n.id] || []).filter(o => POS[o.o] && POS[o.o].r < r).map(o => ({a:POS[o.o].a, w:o.w}));
@@ -484,11 +532,12 @@ function computeLayout(){
     }
     ordered.forEach((n,k) => { POS[n.id] = {a: off + k*step, r}; delete n._t; });
   });
+  if (S.vis && by.issue.length === 1) POS[by.issue[0].id] = {a:-Math.PI/2, r:0}; // single focused issue sits in the centre
   Object.values(POS).forEach(p => { p.x = Math.cos(p.a) * p.r; p.y = Math.sin(p.a) * p.r; });
 }
 function norm(a){ a = a % TAU; return a < 0 ? a + TAU : a; }
 function nodeR(n){
-  const b = TYPES[n.type].base;
+  const b = n.type === 'org' ? GEO.baseO : (n.type === 'person' ? GEO.baseP : TYPES[n.type].base);
   if (S.sizeBy === 'none') return b;
   const src = S.sizeBy === 'btw' ? M.bc : M.str;
   const vals = S.nodes.filter(x => x.type === n.type).map(x => src[x.id] || 0);
@@ -502,14 +551,11 @@ function setupSvg(){
   svg = d3.select('#net');
   gZoom = svg.append('g');
   gBand = gZoom.append('g');
-  const bands = [[530,'#F1FBF4'],[372,'#FFFBEA'],[225,'#FFF4E8'],[85,'#ffffff']];
-  bands.forEach(([r,c]) => gBand.append('circle').attr('r', r).attr('fill', c));
-  RING_R.forEach((r,i) => gBand.append('circle').attr('r', r).attr('fill','none').attr('stroke', [TYPES.issue.stroke, TYPES.org.stroke, TYPES.person.stroke][i]).attr('stroke-opacity', .28).attr('stroke-dasharray','4 6'));
   gCenter = gZoom.append('g').attr('class','center');
   gLinks = gZoom.append('g'); gHits = gZoom.append('g');
   tempLine = gZoom.append('line').attr('stroke','#3d3a35').attr('stroke-width',2).attr('stroke-dasharray','6 5').style('display','none').style('pointer-events','none');
   gNodes = gZoom.append('g');
-  zoom = d3.zoom().scaleExtent([0.4, 5]).on('zoom', e => gZoom.attr('transform', e.transform));
+  zoom = d3.zoom().scaleExtent([0.4, 10]).on('zoom', e => gZoom.attr('transform', e.transform));
   svg.call(zoom).on('dblclick.zoom', null);
   svg.on('click', e => { if (e.target === svg.node() || e.target.closest('g') === gBand.node() || e.target.closest('.center')){ if (S.connectFrom){ S.connectFrom = null; tempLine.style('display','none'); updateBanner(); } select(null); } });
   svg.on('mousemove', e => {
@@ -539,7 +585,7 @@ function wrap(s, max){
 }
 
 const drag = d3.drag()
-  .filter(e => S.canWrite && S.tool === 'select' && !e.button)
+  .filter(e => S.canWrite && S.tool === 'select' && !S.vis && !e.button)
   .on('start', (e,d) => { d._mv = false; })
   .on('drag', (e,d) => {
     const [x,y] = d3.pointer(e, gZoom.node());
@@ -551,13 +597,24 @@ const drag = d3.drag()
     if (n) saveNode(Object.assign({}, n, {a})).then(() => { delete S.tmpA[d.id]; });
   });
 
+function renderBands(){
+  const [R0, R1, R2] = GEO.R;
+  const bands = [[Math.min(R2 + 90, GEO.ext - 8), '#F1FBF4'], [(R1 + R2) / 2, '#FFFBEA'], [(R0 + R1) / 2, '#FFF4E8'], [Math.max(45, R0 - 65), '#ffffff']];
+  gBand.selectAll('circle.band').data(bands).join('circle').attr('class','band').attr('r', d => d[0]).attr('fill', d => d[1]);
+  gBand.selectAll('circle.guide').data(GEO.R).join('circle').attr('class','guide').attr('r', d => d).attr('fill','none')
+    .attr('stroke', (d,i) => [TYPES.issue.stroke, TYPES.org.stroke, TYPES.person.stroke][i]).attr('stroke-opacity', .28).attr('stroke-dasharray','4 6');
+  const vb = Math.ceil(GEO.ext / 10) * 10;
+  if (vb !== curVB){ curVB = vb; svg.attr('viewBox', (-vb) + ' ' + (-vb) + ' ' + (2*vb) + ' ' + (2*vb)); }
+}
 function renderGraph(){
   computeLayout();
-  const ids = new Set(S.nodes.map(n => n.id));
+  renderBands();
+  const shown = S.vis ? S.nodes.filter(n => S.vis.has(n.id)) : S.nodes;
+  const ids = new Set(shown.map(n => n.id));
   const vis = S.links.filter(l => ids.has(l.s) && ids.has(l.t) && l.s !== l.t && W(l) >= S.minW);
   // center label
   const pj = S.projects.find(p => p.id === S.pid);
-  const cl = wrap(pj ? pj.name : '', 11);
+  const cl = (S.vis && S.focus.size === 1) ? [] : wrap(pj ? pj.name : '', 11);
   gCenter.selectAll('text').data(cl).join('text').attr('text-anchor','middle').attr('y', (d,i) => (i - (cl.length-1)/2) * 20 + 6)
     .attr('font-size', 17).attr('font-weight', 600).attr('fill', '#9a7b55').text(d => d);
 
@@ -568,13 +625,14 @@ function renderGraph(){
     .on('click', (e,d) => { e.stopPropagation(); select({kind:'link', id:d.id}); })
     .on('mouseenter', (e,d) => showTip(e, linkTip(d))).on('mousemove', moveTip).on('mouseleave', hideTip);
 
-  const ns = gNodes.selectAll('g.node').data(S.nodes, d => d.id).join(enter => {
+  const ns = gNodes.selectAll('g.node').data(shown, d => d.id).join(enter => {
     const g = enter.append('g').attr('class','node');
     g.append('circle').attr('class','ring-sel');
     g.append('circle').attr('class','body');
     g.append('text').attr('class','lbl halo');
     g.call(drag);
     g.on('click', (e,d) => { e.stopPropagation(); onNodeClick(d); })
+     .on('dblclick', (e,d) => { e.stopPropagation(); if (d.type === 'issue') focusOnly(d.id); })
      .on('mouseenter', (e,d) => { S.hover = d.id; applyHighlight(); showTip(e, nodeTip(d)); })
      .on('mousemove', moveTip)
      .on('mouseleave', () => { S.hover = null; applyHighlight(); hideTip(); });
@@ -592,6 +650,11 @@ function renderGraph(){
       const ls = wrap(d.name, 10);
       t.attr('text-anchor','middle').attr('font-size', 16).attr('font-weight', 600).attr('fill', '#6b3410');
       ls.forEach((ln,i) => t.append('tspan').attr('x', 0).attr('y', (i - (ls.length-1)/2) * 18 + 5.5).text(ln));
+    } else if (d.type === 'org' && GEO.radialO){
+      const left = c < 0;
+      t.attr('font-size', GEO.fO).attr('font-weight', 500).attr('fill', '#5a4500').attr('text-anchor', left ? 'end' : 'start')
+       .attr('transform', 'rotate(' + deg + ') translate(' + (r + 5) + ',0)' + (left ? ' rotate(180)' : ''))
+       .append('tspan').attr('x', 0).attr('y', GEO.fO * 0.35).text(d.name.length > 22 ? d.name.slice(0,21) + '…' : d.name);
     } else if (d.type === 'org'){
       const ls = wrap(d.name, 16);
       const anchor = c > 0.25 ? 'start' : (c < -0.25 ? 'end' : 'middle');
@@ -600,9 +663,9 @@ function renderGraph(){
       ls.forEach((ln,i) => t.append('tspan').attr('x', dx).attr('y', dy + i*17).text(ln));
     } else {
       const left = c < 0;
-      t.attr('font-size', 14.5).attr('fill', '#14532d').attr('text-anchor', left ? 'end' : 'start')
-       .attr('transform', 'rotate(' + deg + ') translate(' + (r + 6) + ',0)' + (left ? ' rotate(180)' : ''))
-       .append('tspan').attr('x', 0).attr('y', 5).text(d.name.length > 24 ? d.name.slice(0,23) + '…' : d.name);
+      t.attr('font-size', GEO.fP).attr('fill', '#14532d').attr('text-anchor', left ? 'end' : 'start')
+       .attr('transform', 'rotate(' + deg + ') translate(' + (r + 4) + ',0)' + (left ? ' rotate(180)' : ''))
+       .append('tspan').attr('x', 0).attr('y', GEO.fP * 0.35).text(d.name.length > 24 ? d.name.slice(0,23) + '…' : d.name);
     }
   });
   if (S.connectFrom && POS[S.connectFrom]){ const p = POS[S.connectFrom]; tempLine.attr('x1', p.x).attr('y1', p.y); }
@@ -719,8 +782,30 @@ function renderPanels(force){
   S.panelDirty = false;
   renderRoles(); renderDetail(); renderAnalysis();
 }
+function setFocus(ids){
+  S.focus = new Set(ids);
+  renderFocusUI(); renderGraph(); renderPanels(true);
+}
+function toggleFocus(id){ const f = new Set(S.focus); if (f.has(id)) f.delete(id); else f.add(id); setFocus(f); }
+function focusOnly(id){ setFocus(S.focus.size === 1 && S.focus.has(id) ? [] : [id]); }
+function renderFocusUI(){
+  const issues = S.nodes.filter(n => n.type === 'issue').sort((a,b) => (a.created||0) - (b.created||0));
+  const ids = new Set(issues.map(n => n.id));
+  S.focus.forEach(id => { if (!ids.has(id)) S.focus.delete(id); });
+  $('#focusChips').innerHTML = issues.length ? issues.map(n => '<button class="fchip' + (S.focus.has(n.id) ? ' on' : '') + '" data-n="' + esc(n.id) + '">' + esc(n.name) + '</button>').join('') : '<span class="muted" style="font-size:12px">ยังไม่มีประเด็น</span>';
+  $('#focusChips').querySelectorAll('.fchip').forEach(b => b.onclick = () => toggleFocus(b.dataset.n));
+  $('#focusClear').disabled = !S.focus.size;
+  const fb = $('#fbanner');
+  if (!S.focus.size){ fb.style.display = 'none'; return; }
+  const vis = visibleSet() || new Set();
+  const cO = S.nodes.filter(n => n.type === 'org' && vis.has(n.id)).length, cP = S.nodes.filter(n => n.type === 'person' && vis.has(n.id)).length;
+  fb.innerHTML = 'แสดงเฉพาะ: <b>' + issues.filter(n => S.focus.has(n.id)).map(n => esc(n.name)).join(', ') + '</b> · ' + cO + ' หน่วยงาน · ' + cP + ' คน <button id="fbClear">แสดงทั้งหมด</button>';
+  fb.style.display = 'block';
+  $('#fbClear').onclick = () => setFocus([]);
+}
 function renderAll(){
   computeMetrics();
+  renderFocusUI();
   renderGraph();
   renderPanels(false);
   renderEmpty();
@@ -749,9 +834,9 @@ function chipsFor(n, type){
 }
 function renderRoles(){
   const el = $('#tab-roles');
-  const orgs = S.nodes.filter(n => n.type === 'org').sort((a,b) => (M.str[b.id]||0) - (M.str[a.id]||0) || a.name.localeCompare(b.name, 'th'));
+  const orgs = S.nodes.filter(n => n.type === 'org' && (!S.vis || S.vis.has(n.id))).sort((a,b) => (M.str[b.id]||0) - (M.str[a.id]||0) || a.name.localeCompare(b.name, 'th'));
   if (!orgs.length){ el.innerHTML = '<p class="muted">ยังไม่มีหน่วยงาน' + (S.canWrite ? ' — เพิ่มที่แผงซ้าย (เลือก "หน่วยงาน")' : '') + '</p>'; return; }
-  el.innerHTML = '<p class="muted" style="margin-top:0;font-size:12.5px">บทบาทของแต่ละหน่วยงาน (เรียงตามความสำคัญรวมของเส้น)' + (S.canWrite ? ' · คลิกการ์ดเพื่อแก้ไข' : '') + '</p>' +
+  el.innerHTML = (S.vis ? '<p class="hint" style="margin-top:0;color:var(--accent)">กำลังกรองตามประเด็น — แสดง ' + orgs.length + ' หน่วยงาน</p>' : '') + '<p class="muted" style="margin-top:0;font-size:12.5px">บทบาทของแต่ละหน่วยงาน (เรียงตามความสำคัญรวมของเส้น)' + (S.canWrite ? ' · คลิกการ์ดเพื่อแก้ไข' : '') + '</p>' +
     orgs.map(o => {
       const sel = S.sel && S.sel.kind === 'node' && S.sel.id === o.id;
       return '<div class="role-card' + (sel ? ' sel' : '') + '" data-n="' + esc(o.id) + '">' +
@@ -798,6 +883,7 @@ function renderDetail(){
   el.innerHTML =
     '<div class="det-head"><span class="dot ' + n.type + '"></span>' + TYPES[n.type].label + ' · ' + (M.deg[n.id]||0) + ' เส้น · ความสำคัญรวม ' + (M.str[n.id]||0) + '</div>' +
     '<div class="det-title">' + esc(n.name) + '</div>' +
+    (n.type === 'issue' ? '<div class="row" style="margin-top:4px"><button class="btn sm" id="d-focus">' + (S.focus.size === 1 && S.focus.has(n.id) ? 'แสดงทั้งหมด' : 'แสดงเฉพาะประเด็นนี้') + '</button></div>' : '') +
     (n.type === 'org' ? '<label>บทบาทของหน่วยงาน<textarea id="d-role" rows="4" placeholder="พิมพ์บทบาท เช่น สนับสนุนเมล็ดพันธุ์ จัดอบรม รับซื้อผลผลิต"' + ro + '>' + esc(n.role) + '</textarea></label>' : '') +
     '<label>ชื่อ<input type="text" id="d-name" maxlength="120" value="' + esc(n.name) + '"' + ro + '></label>' +
     '<label>วง / ประเภท<select id="d-type"' + ro + '>' + ORDER.map(t => '<option value="' + t + '"' + (t === n.type ? ' selected' : '') + '>' + TYPES[t].label + '</option>').join('') + '</select></label>' +
@@ -807,6 +893,7 @@ function renderDetail(){
     (conns.length ? '<ul class="conn">' + conns.map(c => '<li data-l="' + esc(c.l.id) + '"><span class="dot ' + c.o.type + '"></span><a href="#" data-n="' + esc(c.o.id) + '" title="' + esc(c.l.label || c.o.name) + '">' + esc(c.o.name) + '</a><input type="range" class="cw" min="1" max="5" value="' + W(c.l) + '" title="ความสำคัญ"' + ro + '><span class="wv">' + W(c.l) + '</span>' + (S.canWrite ? '<button class="x" title="ลบเส้น">×</button>' : '<span></span>') + '</li>').join('') + '</ul>' : '<p class="muted" style="font-size:13px">ยังไม่มีเส้นเชื่อม</p>') +
     (S.canWrite && opts ? '<div class="addlink"><select id="d-target">' + opts + '</select><select id="d-w">' + [1,2,3,4,5].map(w => '<option value="' + w + '"' + (w === 3 ? ' selected' : '') + '>' + w + '</option>').join('') + '</select><button class="btn" id="d-link">+ เชื่อม</button></div><p class="hint">เลือกรายการแล้วกำหนดความสำคัญ 1–5</p>' : '');
   el.querySelectorAll('a[data-n]').forEach(x => x.onclick = e => { e.preventDefault(); select({kind:'node', id:x.dataset.n}); });
+  const df = $('#d-focus'); if (df) df.onclick = () => focusOnly(n.id);
   if (!S.canWrite) return;
   $('#d-save').onclick = () => {
     const name = $('#d-name').value.trim(); if (!name){ toast('กรุณาใส่ชื่อ'); return; }
@@ -1001,6 +1088,7 @@ function bindUI(){
     for (const n of fixed) await saveNode(Object.assign({}, n, {a:null}));
     toast('จัดเรียงใหม่แล้ว');
   };
+  $('#focusClear').onclick = () => setFocus([]);
   $('#zIn').onclick = () => zoomBy(1.3); $('#zOut').onclick = () => zoomBy(1/1.3); $('#zFit').onclick = () => zoomFit();
   document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
   $('#projSel').onchange = e => { const id = e.target.value; if (S.projects.some(p => p.id === id)) openProject(id); };
