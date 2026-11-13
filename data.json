@@ -14,7 +14,9 @@
      "role": "",
      "note": "",
      "a": null,
-     "created": 1763000000001
+     "created": 1763000000001,
+     "name_en": "Food security",
+     "role_en": ""
     },
     {
      "id": "n002",
@@ -23,7 +25,9 @@
      "role": "",
      "note": "",
      "a": null,
-     "created": 1763000000002
+     "created": 1763000000002,
+     "name_en": "Community forest",
+     "role_en": ""
     },
     {
      "id": "n003",
@@ -32,7 +36,9 @@
      "role": "",
      "note": "",
      "a": null,
-     "created": 1763000000003
+     "created": 1763000000003,
+     "name_en": "Rice farmers",
+     "role_en": ""
     },
     {
      "id": "n004",
@@ -41,7 +47,9 @@
      "role": "",
      "note": "",
      "a": null,
-     "created": 1763000000004
+     "created": 1763000000004,
+     "name_en": "Children & youth",
+     "role_en": ""
     },
     {
      "id": "n005",
@@ -50,7 +58,9 @@
      "role": "",
      "note": "",
      "a": null,
-     "created": 1763000000005
+     "created": 1763000000005,
+     "name_en": "Well-being",
+     "role_en": ""
     },
     {
      "id": "n006",
@@ -59,7 +69,9 @@
      "role": "",
      "note": "",
      "a": null,
-     "created": 1763000000006
+     "created": 1763000000006,
+     "name_en": "Community enterprise",
+     "role_en": ""
     },
     {
      "id": "n007",
@@ -68,7 +80,9 @@
      "role": "ฟื้นฟูดินด้วยอินทรียวัตถุและน้ำหมักสมุนไพร 7 สูตร · หลักสูตร 5 วัน · สาธิตป่า 5 ระดับ",
      "note": "",
      "a": null,
-     "created": 1763000000007
+     "created": 1763000000007,
+     "name_en": "ChTN learning centre",
+     "role_en": "Soil restoration with organic matter and 7 herbal ferments · 5-day course · five-level forest demo"
     },
     {
      "id": "n008",
@@ -77,7 +91,9 @@
      "role": "รับซื้อข้าวเปลือกสูงกว่าราคาตลาด 0.50–1 บาท/กก. · แบรนด์ 'ข้าวน่าน'",
      "note": "",
      "a": null,
-     "created": 1763000000008
+     "created": 1763000000008,
+     "name_en": "Royal Rice Mill (co-op)",
+     "role_en": "Buys paddy at 0.50–1 baht/kg above market · 'Khao Nan' brand"
     },
     {
      "id": "n009",
@@ -86,7 +102,9 @@
      "role": "เครือข่ายพระนักพัฒนา · อนุรักษ์ป่าและส่งเสริมเกษตรผสมผสาน",
      "note": "",
      "a": null,
-     "created": 1763000000009
+     "created": 1763000000009,
+     "name_en": "Wat Pong Kham",
+     "role_en": "Development-monk network · forest conservation and integrated farming"
     },
     {
      "id": "n010",
@@ -95,7 +113,9 @@
      "role": "ระบบรับรองแบบมีส่วนร่วม (35→46 ครัวเรือน) · แบรนด์ 'กระซิบรักษ์'",
      "note": "",
      "a": null,
-     "created": 1763000000010
+     "created": 1763000000010,
+     "name_en": "PGS Nan",
+     "role_en": "Participatory Guarantee System (35→46 households) · 'Krasib-Raks' brand"
     },
     {
      "id": "n011",
@@ -104,7 +124,9 @@
      "role": "แปรรูปผลผลิตเกษตร 66 กลุ่ม 390 คน ใน 10 อำเภอ",
      "note": "",
      "a": null,
-     "created": 1763000000011
+     "created": 1763000000011,
+     "name_en": "OrigiNan cluster",
+     "role_en": "Agri-processing cluster: 66 groups, 390 people, 10 districts"
     },
     {
      "id": "n012",
@@ -113,7 +135,9 @@
      "role": "หลักสูตรข้าวที่ร่วมออกแบบกับชาวนา · นักเรียนเรียนรู้ห่วงโซ่ข้าวถึงโรงสี",
      "note": "",
      "a": null,
-     "created": 1763000000012
+     "created": 1763000000012,
+     "name_en": "Sattha Silaphet School",
+     "role_en": "Rice curriculum co-designed with farmers · students learn the rice chain up to the mill"
     },
     {
      "id": "n013",
@@ -122,7 +146,9 @@
      "role": "อนุรักษ์พันธุ์ข้าวพื้นเมือง · หนุนหลักสูตรท้องถิ่น",
      "note": "",
      "a": null,
-     "created": 1763000000013
+     "created": 1763000000013,
+     "name_en": "Hug Muang Nan Foundation",
+     "role_en": "Conserves local rice varieties · supports place-based curricula"
     },
     {
      "id": "n014",
@@ -131,7 +157,9 @@
      "role": "เยาวชนติดตามป่าชุมชน · ถ่ายทอดความรู้ป่าผ่านเกม",
      "note": "",
      "a": null,
-     "created": 1763000000014
+     "created": 1763000000014,
+     "name_en": "La-on Nan",
+     "role_en": "Youth community-forest monitoring · forest knowledge through games"
     },
     {
      "id": "n015",
@@ -140,7 +168,9 @@
      "role": "ตรวจสารโคลีนเอสเทอเรสในเลือด · หนุนกลุ่มผักปลอดภัย",
      "note": "",
      "a": null,
-     "created": 1763000000015
+     "created": 1763000000015,
+     "name_en": "Sub-district health hospital (example)",
+     "role_en": "Blood cholinesterase testing · supports safe-vegetable groups"
     },
     {
      "id": "n016",
@@ -149,7 +179,9 @@
      "role": "ส่งเสริมกลุ่มผักปลอดภัยและโรงเรียนชาวนา",
      "note": "",
      "a": null,
-     "created": 1763000000016
+     "created": 1763000000016,
+     "name_en": "District Agriculture Office (example)",
+     "role_en": "Supports safe-vegetable groups and the Farmers' Field School"
     },
     {
      "id": "n017",
@@ -158,7 +190,9 @@
      "role": "Rice Farmer Field School · เรียนรู้ลดสารเคมี",
      "note": "",
      "a": null,
-     "created": 1763000000017
+     "created": 1763000000017,
+     "name_en": "Farmers' Field School",
+     "role_en": "Rice Farmer Field School · learning to cut agrochemicals"
     },
     {
      "id": "n018",
@@ -167,7 +201,9 @@
      "role": "ช่องทางตลาดข้าวอินทรีย์ (รับซื้อล็อตเล็ก)",
      "note": "",
      "a": null,
-     "created": 1763000000018
+     "created": 1763000000018,
+     "name_en": "Lemon Farm",
+     "role_en": "Organic rice market channel (buys small lots)"
     },
     {
      "id": "n019",
@@ -176,7 +212,9 @@
      "role": "",
      "note": "",
      "a": null,
-     "created": 1763000000019
+     "created": 1763000000019,
+     "name_en": "Khun Kul",
+     "role_en": ""
     },
     {
      "id": "n020",
@@ -185,7 +223,9 @@
      "role": "",
      "note": "",
      "a": null,
-     "created": 1763000000020
+     "created": 1763000000020,
+     "name_en": "Pho Chin",
+     "role_en": ""
     },
     {
      "id": "n021",
@@ -194,7 +234,9 @@
      "role": "",
      "note": "",
      "a": null,
-     "created": 1763000000021
+     "created": 1763000000021,
+     "name_en": "Phrakhru Somkid",
+     "role_en": ""
     },
     {
      "id": "n022",
@@ -203,7 +245,9 @@
      "role": "",
      "note": "",
      "a": null,
-     "created": 1763000000022
+     "created": 1763000000022,
+     "name_en": "Rice-curriculum teacher (example)",
+     "role_en": ""
     },
     {
      "id": "n023",
@@ -212,7 +256,9 @@
      "role": "",
      "note": "",
      "a": null,
-     "created": 1763000000023
+     "created": 1763000000023,
+     "name_en": "Youth leader (example)",
+     "role_en": ""
     },
     {
      "id": "n024",
@@ -221,7 +267,9 @@
      "role": "",
      "note": "",
      "a": null,
-     "created": 1763000000024
+     "created": 1763000000024,
+     "name_en": "PGS coordinator (example)",
+     "role_en": ""
     },
     {
      "id": "n025",
@@ -230,7 +278,9 @@
      "role": "",
      "note": "",
      "a": null,
-     "created": 1763000000025
+     "created": 1763000000025,
+     "name_en": "Cluster manager (example)",
+     "role_en": ""
     }
    ],
    "links": [
@@ -530,7 +580,8 @@
      "label": "",
      "created": 1763000001037
     }
-   ]
+   ],
+   "name_en": "Nan agroecology learning centres (example)"
   }
  ]
 }
